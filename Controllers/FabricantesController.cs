@@ -1,6 +1,8 @@
 ﻿using GestaoConcessionariasWebApp.Data;
 using GestaoConcessionariasWebApp.Models.Fabricantes;
 using GestaoConcessionariasWebApp.Models.Fabricantes.Create;
+using GestaoConcessionariasWebApp.Models.Users.Roles;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,7 +43,7 @@ namespace GestaoConcessionariasWebApp.Controllers
                 .IgnoreQueryFilters()
                 .Where(f => f.IsDeleted)
                 .AsNoTracking()
-                .OrderBy(f => f.Nome)
+                .OrderBy(f => f.NomeFabricante)
                 .ToListAsync();
 
             return Ok(itens);
@@ -49,12 +51,13 @@ namespace GestaoConcessionariasWebApp.Controllers
 
         // POST: api/fabricantes
         [HttpPost]
+        [Authorize(Roles = $"{Roles.Admin},{Roles.Gerente}")]
         public async Task<IActionResult> Post([FromBody] CreateFabricanteDto dto)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
             var fabricante = Fabricante.Create(
-                dto.Nome,
+                dto.NomeFabricante,
                 dto.PaisOrigem, 
                 dto.AnoFundacao,
                 dto.Website
@@ -87,6 +90,7 @@ namespace GestaoConcessionariasWebApp.Controllers
 
         // DELETE: api/fabricantes/{id}
         [HttpDelete("{id:guid}")]
+        [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> SoftDelete(Guid id)
         {
             var fabricante = await _db.Fabricantes.FindAsync(id);

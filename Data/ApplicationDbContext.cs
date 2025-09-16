@@ -1,31 +1,29 @@
 ﻿using GestaoConcessionariasWebApp.Models.Fabricantes;
+using GestaoConcessionariasWebApp.Models.Users;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace GestaoConcessionariasWebApp.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options) { }
+
         public DbSet<Fabricante> Fabricantes => Set<Fabricante>();
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
+            base.OnModelCreating(builder);
 
-        }
-
-        protected override void OnModelCreating(ModelBuilder b)
-        {
-            base.OnModelCreating(b);
-
-            b.Entity<Fabricante>()
-             .HasIndex(f => f.Nome)
+            builder.Entity<Fabricante>()
+             .HasIndex(f => f.NomeFabricante)
              .IsUnique();
 
-            b.Entity<Fabricante>()
+            builder.Entity<Fabricante>()
              .HasQueryFilter(f => !f.IsDeleted);
 
-            b.Entity<Fabricante>()
+            builder.Entity<Fabricante>()
              .Property(f => f.Website)
              .HasMaxLength(255);
         }

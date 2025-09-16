@@ -1,4 +1,4 @@
-namespace GestaoConcessionariasWebApp.Models
+namespace GestaoConcessionariasWebApp.Models.Errors
 {
     public class ErrorViewModel
     {

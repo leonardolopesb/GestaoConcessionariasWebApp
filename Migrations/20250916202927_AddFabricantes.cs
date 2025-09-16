@@ -55,9 +55,9 @@ namespace GestaoConcessionariasWebApp.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    NomeFabricante = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     PaisOrigem = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    AnoFundacao = table.Column<int>(type: "int", nullable: false),
+                    AnoFundacao = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Website = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -212,9 +212,9 @@ namespace GestaoConcessionariasWebApp.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Fabricantes_Nome",
+                name: "IX_Fabricantes_NomeFabricante",
                 table: "Fabricantes",
-                column: "Nome",
+                column: "NomeFabricante",
                 unique: true);
         }
 

@@ -1,31 +1,72 @@
-html {
-  font-size: 14px;
-}
+html { font-size:14px; }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
+@media (min-width:768px){ html { font-size:16px; } }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus,
+.form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+html { position: relative; min-height: 100%; }
+
+body { margin-bottom: 60px; }
+
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color); text-align:end;
 }
 
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder { text-align:start; }
+
+/* === Complementos minimalistas === */
 body {
-  margin-bottom: 60px;
+  background: #fff;
+  color: #1f2937; /* tom neutro legível */
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* Navbar simples */
+.site-nav {
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255,255,255,.95);
+  backdrop-filter: saturate(160%) blur(6px);
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* Seções suaves */
+.section-soft {
+  background: #f7f9fc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
 }
+
+/* Cartões de atalho */
+.card-link {
+  display: block;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.card-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.06);
+}
+
+/* Grid responsivo simples */
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Rodapé discreto */
+.site-footer {
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+/* Ajustes utilitários */
+.lead-sm { color:#6b7280; }
