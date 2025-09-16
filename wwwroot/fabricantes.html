@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Fabricantes - Concessionárias</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-4">
+
+  <h1 class="mb-4">Lista de Fabricantes</h1>
+
+  <!-- Botão para carregar -->
+  <button id="btnCarregar" class="btn btn-primary mb-3">Carregar Fabricantes</button>
+
+  <!-- Tabela -->
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Id</th>
+        <th>Nome</th>
+        <th>País</th>
+        <th>Ano Fundação</th>
+        <th>Website</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaFabricantes">
+      <tr><td colspan="5">Clique em "Carregar Fabricantes"</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    document.getElementById("btnCarregar").addEventListener("click", async () => {
+      const tabela = document.getElementById("tabelaFabricantes");
+      tabela.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+
+      try {
+        const resposta = await fetch("/api/fabricantes");
+        if (!resposta.ok) throw new Error("Erro ao buscar fabricantes");
+
+        const dados = await resposta.json();
+
+        if (dados.length === 0) {
+          tabela.innerHTML = "<tr><td colspan='5'>Nenhum fabricante cadastrado.</td></tr>";
+          return;
+        }
+
+        tabela.innerHTML = "";
+        dados.forEach(f => {
+          const linha = `
+            <tr>
+              <td>${f.id}</td>
+              <td>${f.nome}</td>
+              <td>${f.paisOrigem ?? ""}</td>
+              <td>${f.anoFundacao ?? ""}</td>
+              <td><a href="${f.website}" target="_blank">${f.website ?? ""}</a></td>
+            </tr>`;
+          tabela.innerHTML += linha;
+        });
+
+      } catch (erro) {
+        console.error(erro);
+        tabela.innerHTML = "<tr><td colspan='5' class='text-danger'>Erro ao carregar dados</td></tr>";
+      }
+    });
+  </script>
+</body>
+</html>
