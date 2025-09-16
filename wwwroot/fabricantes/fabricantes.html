@@ -9,8 +9,11 @@
 
   <h1 class="mb-4">Lista de Fabricantes</h1>
 
-  <!-- Botão para carregar -->
+  <!-- Botão para atualizar os fabricantes -->
   <button id="btnCarregar" class="btn btn-primary mb-3">Carregar Fabricantes</button>
+
+  <!-- Botão para ver fabricantes deletados -->
+  <button id="btnDeletados" class="btn btn-secondary mb-3">Ver Fabricantes Deletados</button>
 
   <!-- Tabela -->
   <table class="table table-bordered table-striped">
@@ -61,6 +64,10 @@
         console.error(erro);
         tabela.innerHTML = "<tr><td colspan='5' class='text-danger'>Erro ao carregar dados</td></tr>";
       }
+    });
+
+    document.getElementById("btnDeletados").addEventListener("click", () => {
+      window.location.href = "/fabricantes/fabricantes-deletados.html";
     });
   </script>
 </body>

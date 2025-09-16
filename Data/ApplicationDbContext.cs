@@ -1,4 +1,4 @@
-﻿using GestaoConcessionariasWebApp.Models;
+﻿using GestaoConcessionariasWebApp.Models.Fabricantes;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +24,10 @@ namespace GestaoConcessionariasWebApp.Data
 
             b.Entity<Fabricante>()
              .HasQueryFilter(f => !f.IsDeleted);
+
+            b.Entity<Fabricante>()
+             .Property(f => f.Website)
+             .HasMaxLength(255);
         }
     }
 }
