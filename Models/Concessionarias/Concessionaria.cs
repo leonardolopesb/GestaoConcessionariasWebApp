@@ -20,19 +20,13 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias
         [StringLength(50)]
         public string Cidade { get; private set; } = null!;
 
-        [StringLength(50)]
-        public string Rua { get; private set; } = null!;
+        [StringLength(255)]
+        public string Endereco { get; private set; } = null!;
 
-        [StringLength(50)]
-        public string NumeroDaRua { get; private set; } = null!;
-
-        [StringLength(50)]
-        public string? PontoReferencia { get; private set; }
-
-        [Phone, StringLength(20)]
+        [Phone]
         public string Telefone { get; private set; } = null!;
 
-        [EmailAddress, StringLength(100)]
+        [EmailAddress]
         public string Email { get; private set; } = null!;
 
         [Range(0, int.MaxValue)]
@@ -48,9 +42,7 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias
             string cep,
             string estado,
             string cidade,
-            string rua,
-            string numero,
-            string? referencia,
+            string endereco,
             string telefone,
             string email,
             int capacidade)
@@ -60,9 +52,7 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias
             CEP = cep;
             Estado = estado;
             Cidade = cidade;
-            Rua = rua;
-            NumeroDaRua = numero;
-            PontoReferencia = referencia;
+            Endereco = endereco;
             Telefone = telefone;
             Email = email;
             CapacidadeMaximaVeiculos = capacidade;
@@ -74,14 +64,12 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias
             string cep,
             string estado,
             string cidade,
-            string rua,
-            string numero,
-            string? referencia,
+            string endereco,
             string telefone,
             string email,
             int capacidade)
         {
-            return new Concessionaria(Guid.NewGuid(), nome, cep, estado, cidade, rua, numero, referencia, telefone, email, capacidade);
+            return new Concessionaria(Guid.NewGuid(), nome, cep, estado, cidade, endereco, telefone, email, capacidade);
         }
 
         public void Update(
@@ -89,9 +77,7 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias
             string cep,
             string estado,
             string cidade,
-            string rua,
-            string numero,
-            string? referencia,
+            string endereco,
             string telefone,
             string email,
             int capacidade)
@@ -100,9 +86,7 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias
             CEP = cep;
             Estado = estado;
             Cidade = cidade;
-            Rua = rua;
-            NumeroDaRua = numero;
-            PontoReferencia = referencia;
+            Endereco = endereco;
             Telefone = telefone;
             Email = email;
             CapacidadeMaximaVeiculos = capacidade;

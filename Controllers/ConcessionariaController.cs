@@ -51,9 +51,7 @@ public class ConcessionariasController : ControllerBase
             dto.CEP,
             dto.Estado, 
             dto.Cidade,    
-            dto.Rua,
-            dto.NumeroDaRua,
-            dto.PontoReferencia,
+            dto.Endereco,
             dto.Telefone,
             dto.Email,
             dto.CapacidadeMaximaVeiculos);
@@ -83,9 +81,7 @@ public class ConcessionariasController : ControllerBase
             dto.CEP,
             dto.Estado, 
             dto.Cidade,
-            dto.Rua,
-            dto.NumeroDaRua,
-            dto.PontoReferencia,
+            dto.Endereco,
             dto.Telefone,
             dto.Email,
             dto.CapacidadeMaximaVeiculos);

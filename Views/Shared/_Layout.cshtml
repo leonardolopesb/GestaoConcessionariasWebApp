@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+    <head>
+        <meta charset="utf-8" />
+        <title>@ViewData["Title"] - GestaoConcessionariasWebApp</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="~/css/site.css" />
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="/">Home</a> |
+                <a href="/Identity/Account/Login">Login</a>
+            </nav>
+        </header>
+        <main role="main" class="container">
+            @RenderBody()
+        </main>
+        <footer>
+            <hr />
+            <p>&copy; @DateTime.Now.Year - GestaoConcessionariasWebApp</p>
+        </footer>
+        @RenderSection("Scripts", required: false)
+    </body>
+</html>

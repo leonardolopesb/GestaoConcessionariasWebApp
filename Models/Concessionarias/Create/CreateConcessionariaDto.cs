@@ -16,14 +16,8 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias.Create
         [StringLength(50)]
         public string Cidade { get; set; } = string.Empty;
 
-        [StringLength(50)]
-        public string Rua { get; set; } = string.Empty;
-
-        [StringLength(50)]
-        public string NumeroDaRua { get; set; } = string.Empty;
-
-        [StringLength(50)]
-        public string? PontoReferencia { get; set; }
+        [StringLength(255)]
+        public string Endereco { get; set; } = string.Empty;
 
         [Phone, StringLength(20)]
         public string Telefone { get; set; } = string.Empty;
@@ -34,6 +28,4 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias.Create
         [Range(0, int.MaxValue)]
         public int CapacidadeMaximaVeiculos { get; set; }
     }
-
-
 }

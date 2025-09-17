@@ -21,7 +21,7 @@ namespace GestaoConcessionariasWebApp.Models.Veiculos
         [Required]
         public Guid FabricanteId { get; private set; }
 
-        public Fabricante? Fabricante { get; private set; }
+        public Fabricante Fabricante { get; private set; } = null!;
 
         public TipoVeiculo TipoVeiculo { get; private set; }
 

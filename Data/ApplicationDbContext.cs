@@ -1,7 +1,9 @@
-﻿using GestaoConcessionariasWebApp.Models.Concessionarias;
+﻿using GestaoConcessionariasWebApp.Models.Clientes;
+using GestaoConcessionariasWebApp.Models.Concessionarias;
 using GestaoConcessionariasWebApp.Models.Fabricantes;
 using GestaoConcessionariasWebApp.Models.Users;
 using GestaoConcessionariasWebApp.Models.Veiculos;
+using GestaoConcessionariasWebApp.Models.Vendas;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +17,8 @@ namespace GestaoConcessionariasWebApp.Data
         public DbSet<Fabricante> Fabricantes => Set<Fabricante>();
         public DbSet<Veiculo> Veiculos => Set<Veiculo>();
         public DbSet<Concessionaria> Concessionarias => Set<Concessionaria>();
+        public DbSet<Venda> Vendas => Set<Venda>();
+        public DbSet<Cliente> Clientes => Set<Cliente>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -54,6 +58,52 @@ namespace GestaoConcessionariasWebApp.Data
 
             builder.Entity<Concessionaria>()
               .HasQueryFilter(c => !c.IsDeleted);
+
+            // Configurações do Cliente
+            builder.Entity<Cliente>()
+                .HasIndex(c => c.CPF)
+                .IsUnique();
+
+            builder.Entity<Cliente>()
+                .HasQueryFilter(c => !c.IsDeleted);
+
+            // Configurações da Venda
+            builder.Entity<Venda>()
+                .HasIndex(v => v.ProtocoloVenda)
+                .IsUnique();
+
+            builder.Entity<Venda>()
+                .Property(v => v.PrecoVenda)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Entity<Venda>()
+                .Property(v => v.ProtocoloVenda)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            builder.Entity<Venda>()
+                .HasQueryFilter(v => !v.IsDeleted);
+
+            // Relacionamentos Venda N:1 Veiculo
+            builder.Entity<Venda>()
+                .HasOne(v => v.Veiculo)
+                .WithMany()
+                .HasForeignKey(v => v.VeiculoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relacionamentos Venda N:1 Concessionaria
+            builder.Entity<Venda>()
+                .HasOne(v => v.Concessionaria)
+                .WithMany()
+                .HasForeignKey(v => v.ConcessionariaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relacionamentos Venda N:1 Cliente
+            builder.Entity<Venda>()
+                .HasOne(v => v.Cliente)
+                .WithMany()
+                .HasForeignKey(v => v.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
