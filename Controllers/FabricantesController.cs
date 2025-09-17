@@ -10,6 +10,7 @@ namespace GestaoConcessionariasWebApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class FabricantesController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -20,7 +21,9 @@ namespace GestaoConcessionariasWebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var fabricantes = await _db.Fabricantes.AsNoTracking().ToListAsync();
+            var fabricantes = await _db.Fabricantes
+                .AsNoTracking()
+                .ToListAsync();
 
             return Ok(fabricantes);
         }
