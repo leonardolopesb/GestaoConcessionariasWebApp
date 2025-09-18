@@ -2,15 +2,17 @@ using GestaoConcessionariasWebApp.Data;
 using GestaoConcessionariasWebApp.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder
-    .Services.AddDbContext<ApplicationDbContext>(options =>
-    options
-    .UseSqlServer(connectionString));
+    .Services.
+    AddDbContext<ApplicationDbContext>(
+        options =>options
+        .UseSqlServer(connectionString));
 
 builder
     .Services
@@ -18,16 +20,23 @@ builder
 
 builder
     .Services
-    .AddDefaultIdentity<ApplicationUser>(options =>
+    .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
         options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequireUppercase = false;
-        options.Password.RequireLowercase = false;
         options.Password.RequiredLength = 8;
     })
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+// Configura o cookie para retornar erro 4** ao invés de redirecionar
+builder.Services.ConfigureApplicationCookie(o =>
+{
+    o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
+    o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
+});
 
 builder
     .Services
@@ -40,6 +49,10 @@ builder
 builder
     .Services
     .AddSwaggerGen();
+
+builder
+    .Services
+    .AddRazorPages();
 
 var app = builder.Build();
 
@@ -61,4 +74,5 @@ app.MapControllers();
 app.MapRazorPages();
 
 await IdentitySeeder.SeedAsync(app.Services);
+
 app.Run();

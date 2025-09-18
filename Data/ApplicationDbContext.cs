@@ -25,6 +25,18 @@ namespace GestaoConcessionariasWebApp.Data
             // Configurações base
             base.OnModelCreating(builder);
 
+            // Configurações do Usuário
+            builder.Entity<ApplicationUser>(e =>
+            {
+                e.Property(u => u.NomeUsuario).HasMaxLength(50);
+                e.Property(u => u.AccessLevel).HasConversion<string>();
+                e.Property(u => u.Email).HasMaxLength(100);
+                e.Property(u => u.UserName).HasMaxLength(50);
+
+                e.HasQueryFilter(u => !u.IsDeleted);
+            });
+
+
             // Configurações do Fabricante
             builder.Entity<Fabricante>()
              .HasIndex(f => f.NomeFabricante)

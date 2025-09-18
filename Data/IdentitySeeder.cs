@@ -1,36 +1,39 @@
 ﻿using GestaoConcessionariasWebApp.Models.Users;
-using GestaoConcessionariasWebApp.Models.Users.Roles;
 using Microsoft.AspNetCore.Identity;
 
 namespace GestaoConcessionariasWebApp.Data;
 
 public static class IdentitySeeder
 {
-    public static async Task SeedAsync(IServiceProvider sp)
+    public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
-        using var scope = sp.CreateScope();
-        var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        using var scope = serviceProvider.CreateScope();
 
-        var roles = new[] { Roles.Admin, Roles.Gerente, Roles.Vendedor };
+        var role = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var user = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        string[] roles = { "Admin", "Vendedor", "Gerente" };
+
         foreach (var r in roles)
-            if (!await roleMgr.RoleExistsAsync(r))
-                await roleMgr.CreateAsync(new IdentityRole(r));
+            if (!await role.RoleExistsAsync(r))
+                await role.CreateAsync(new IdentityRole(r));
 
         var adminEmail = "admin@local.com";
-        var admin = await userMgr.FindByEmailAsync(adminEmail);
-        if (admin is null)
+        var admin = await user.FindByEmailAsync(adminEmail);
+
+        if (admin == null)
         {
             admin = new ApplicationUser
             {
-                UserName = adminEmail,
+                NomeUsuario = "Administrador do Sistema",
+                AccessLevel = AccessLevel.Admin,
+                UserName = "admin",
                 Email = adminEmail,
-                EmailConfirmed = true,
-                NomeUsuario = "Admin",
-                NivelAcesso = Roles.Admin
+                EmailConfirmed = true
             };
-            await userMgr.CreateAsync(admin, "Admin@123");
-            await userMgr.AddToRoleAsync(admin, Roles.Admin);
+
+            await user.CreateAsync(admin, "Admin@123");
+            await user.AddToRoleAsync(admin, "Admin");
         }
     }
 }
