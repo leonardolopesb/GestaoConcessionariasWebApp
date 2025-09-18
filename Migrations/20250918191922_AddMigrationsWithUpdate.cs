@@ -5,7 +5,7 @@
 namespace GestaoConcessionariasWebApp.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUserSoftDelete : Migration
+    public partial class AddMigrationsWithUpdate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

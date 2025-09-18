@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Vendas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-4">
+  <h1 class="mb-4">Lista de Vendas</h1>
+
+  <div class="d-flex gap-2 mb-3">
+    <button id="btnCarregar" class="btn btn-primary">Carregar Vendas</button>
+    <button id="btnDeletados" class="btn btn-secondary">Ver Vendas Deletadas</button>
+  </div>
+
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Id</th>
+        <th>Protocolo</th>
+        <th>Data</th>
+        <th>Preço</th>
+        <th>Veículo</th>
+        <th>Concessionária</th>
+        <th>Cliente</th>
+        <th>CPF</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="8">Clique em "Carregar Vendas"</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const tbody = document.getElementById('tbody');
+    document.getElementById('btnCarregar').addEventListener('click', async () => {
+      tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
+      try {
+        const r = await fetch('/api/vendas', { credentials: 'include' });
+        if (!r.ok) throw new Error('Falha ao buscar');
+        const data = await r.json();
+        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8">Nenhuma venda.</td></tr>`; return; }
+        tbody.innerHTML = '';
+        for (const v of data) {
+          const dataPt = v.dataVenda ? new Date(v.dataVenda).toLocaleString() : '';
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${v.id}</td>
+              <td>${v.protocolo ?? v.protocoloVenda ?? ''}</td>
+              <td>${dataPt}</td>
+              <td>${v.precoVenda ?? ''}</td>
+              <td>${v.veiculoModelo ?? v.veiculo?.modelo ?? ''}</td>
+              <td>${v.concessionariaNome ?? v.concessionaria?.nome ?? ''}</td>
+              <td>${v.clienteNome ?? v.cliente?.nome ?? ''}</td>
+              <td>${v.clienteCpf ?? v.cliente?.cpf ?? ''}</td>
+            </tr>`);
+        }
+      } catch(e){ tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro</td></tr>`; console.error(e); }
+    });
+    document.getElementById('btnDeletados').addEventListener('click', () => {
+      location.href = '/vendas/vendas-deletadas.html';
+    });
+  </script>
+</body>
+</html>

@@ -2,9 +2,9 @@
 {
     public sealed class UpdateUserDto
     {
-        public string UserName { get; set; } = default!;
-        public string FullName { get; set; } = default!;
+        public string NomeUsuario { get; set; } = default!;
         public string Email { get; set; } = default!;
         public AccessLevel AccessLevel { get; set; }
+        public string? NovaSenha { get; set; }
     }
 }

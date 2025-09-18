@@ -9,7 +9,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-// [Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin")]
 public class FabricantesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;

@@ -2,7 +2,7 @@ using GestaoConcessionariasWebApp.Data;
 using GestaoConcessionariasWebApp.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,15 +32,20 @@ builder
     .AddDefaultTokenProviders();
 
 // Configura o cookie para retornar erro 4** ao invés de redirecionar
-builder.Services.ConfigureApplicationCookie(o =>
+builder.Services.ConfigureApplicationCookie(options =>
 {
-    o.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
-    o.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
+    options.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
+    options.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
 });
 
 builder
     .Services
-    .AddControllers();
+    .AddControllers()
+    .AddJsonOptions(options =>
+     {
+         // Configura para que o register no front-end funcione corretamente com os enums do AccessLevel
+         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+     });
 
 builder
     .Services

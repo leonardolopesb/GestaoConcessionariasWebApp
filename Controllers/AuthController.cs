@@ -10,7 +10,6 @@ namespace GestaoConcessionariasWebApp.Controllers;
 [ApiController]
 [Route("auth")]
 // [Authorize]
-[AllowAnonymous]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _user;
@@ -28,17 +27,22 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
+        // Condição para que somente admins possam criar novos usuários
+        if (!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
         if (!await _role.RoleExistsAsync(dto.AccessLevel.ToString()))
             return BadRequest("Nível de acesso inválido.");
 
         var user = new ApplicationUser
         {
-            NomeUsuario = dto.FullName,
-            AccessLevel = dto.AccessLevel,
-            UserName = dto.UserName,
+            UserName = dto.NomeUsuario,
+            NomeUsuario = dto.NomeUsuario,
             Email = dto.Email,
+            AccessLevel = dto.AccessLevel,
             EmailConfirmed = true
         };
 
@@ -47,28 +51,38 @@ public class AuthController : ControllerBase
 
         await _user.AddToRoleAsync(user, dto.AccessLevel.ToString());
 
-        return Ok(new { user.Id, user.UserName, Role = dto.AccessLevel.ToString() });
+        return CreatedAtAction(nameof(Me), new { }, new
+        {
+            user.Id,
+            user.NomeUsuario,
+            user.Email,
+            AccessLevel = user.AccessLevel.ToString()
+        });
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(LoginDto dto)
     {
-        var user = await _user.FindByNameAsync(dto.UserName);
-        if (user is null) return Unauthorized("Credenciais inválidas.");
+        ApplicationUser? user = await _user.FindByNameAsync(dto.NomeUsuario);
+        if (user is null)
+            return Unauthorized("Credenciais inválidas.");
 
-        var deleted = await _user.Users
+        var isDeleted = await _user.Users
             .IgnoreQueryFilters()
             .AnyAsync(u => u.Id == user.Id && u.IsDeleted);
-        if (deleted) return Unauthorized("Usuário desativado.");
+        if (isDeleted)
+            return Unauthorized("Usuário desativado.");
 
-        var res = await _signIn.PasswordSignInAsync(dto.UserName, dto.Password, dto.RememberMe, false);
-        if (!res.Succeeded) return Unauthorized("Credenciais inválidas.");
+        var res = await _signIn.PasswordSignInAsync(user, dto.Password, isPersistent: false, lockoutOnFailure: false);
+        if (!res.Succeeded)
+            return Unauthorized("Credenciais inválidas.");
 
         return Ok("Login realizado.");
     }
 
     [HttpPost("logout")]
+    [AllowAnonymous]
     public async Task<IActionResult> Logout()
     {
         await _signIn.SignOutAsync();
@@ -76,12 +90,18 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("me")]
+    [Authorize]
     public async Task<IActionResult> Me()
     {
         var user = await _user.GetUserAsync(User);
         if (user == null) return Unauthorized();
 
-        var roles = await _user.GetRolesAsync(user);
-        return Ok(new { user.Id, user.UserName, user.Email, user.NomeUsuario, user.AccessLevel, Roles = roles });
+        return Ok(new
+        {
+            user.Id,
+            user.NomeUsuario,
+            user.Email,
+            AccessLevel = user.AccessLevel.ToString()
+        });
     }
 }

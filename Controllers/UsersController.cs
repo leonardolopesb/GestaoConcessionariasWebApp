@@ -10,7 +10,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/users")]
-// [Authorize(Roles = "Administrador")]
+[Authorize(Roles = "Admin")]
 public class UsersController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userMgr;
@@ -26,11 +26,10 @@ public class UsersController : ControllerBase
     {
         var users = await _userMgr.Users
             .Select(u => new {
-                u.Id,
-                u.UserName,
+                u.Id, 
                 u.NomeUsuario,
-                u.Email,
-                u.AccessLevel
+                u.Email, 
+                NivelAcesso = u.AccessLevel.ToString() 
             })
             .ToListAsync();
 
@@ -47,7 +46,6 @@ public class UsersController : ControllerBase
         return Ok(new
         {
             u.Id,
-            u.UserName,
             u.NomeUsuario,
             u.Email,
             u.AccessLevel
@@ -63,7 +61,6 @@ public class UsersController : ControllerBase
             .Where(u => u.IsDeleted)
             .Select(u => new {
                 u.Id,
-                u.UserName,
                 u.NomeUsuario,
                 u.Email,
                 u.AccessLevel,
@@ -80,11 +77,11 @@ public class UsersController : ControllerBase
     {
         var user = new ApplicationUser
         {
-            UserName = dto.UserName,
-            NomeUsuario = dto.FullName,
+            UserName = dto.NomeUsuario,
+            NomeUsuario = dto.NomeUsuario,
             Email = dto.Email,
-            AccessLevel = dto.AccessLevel,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            AccessLevel = dto.AccessLevel
         };
 
         var result = await _userMgr.CreateAsync(user, dto.Password);
@@ -95,9 +92,9 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, new
         {
             user.Id,
-            user.UserName,
+            user.NomeUsuario,
             user.Email,
-            user.AccessLevel
+            AccessLevel = user.AccessLevel.ToString()
         });
     }
 
@@ -127,15 +124,21 @@ public class UsersController : ControllerBase
         var user = await _userMgr.FindByIdAsync(id);
         if (user == null) return NotFound();
 
-        user.NomeUsuario = dto.FullName;
+        user.NomeUsuario = dto.NomeUsuario;
+        user.UserName = dto.NomeUsuario;
         user.Email = dto.Email;
-        user.UserName = dto.UserName;
         user.AccessLevel = dto.AccessLevel;
 
         var result = await _userMgr.UpdateAsync(user);
         if (!result.Succeeded) return BadRequest(result.Errors);
 
-        return Ok(new { user.Id, user.UserName, user.Email, user.AccessLevel });
+        return Ok(
+            new {
+                user.Id, 
+                user.NomeUsuario,
+                user.Email,
+                AccessLevel = user.AccessLevel.ToString()
+            });
     }
 
     // DELETE: api/users/{id}

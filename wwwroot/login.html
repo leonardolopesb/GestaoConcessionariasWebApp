@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8" />
   <title>Login</title>
@@ -12,9 +13,9 @@
     <h1 class="mb-4">Login</h1>
 
     <form id="frmLogin" class="vstack gap-3">
-      <input id="username" class="form-control" placeholder="Usuário" autocomplete="username" required />
-      <input id="password" class="form-control" type="password" placeholder="Senha" autocomplete="current-password" required />
-      <button id="btnLogin" class="btn btn-primary btn-sm">Entrar</button>
+      <input id="NomeUsuario" class="form-control" placeholder="Nome do Usuário" required />
+      <input id="Password" class="form-control" type="password" placeholder="Senha" required />
+      <button class="btn btn-primary btn-sm">Entrar</button>
     </form>
 
     <div id="msg" class="mt-3 small"></div>
@@ -22,45 +23,55 @@
 
   <script>
     const form = document.getElementById('frmLogin');
-    const btn  = document.getElementById('btnLogin');
-    const msg  = document.getElementById('msg');
+    const msg = document.getElementById('msg');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       msg.textContent = '';
-      btn.disabled = true;
 
       const body = {
-        userName: document.getElementById('username').value,
-        password: document.getElementById('password').value
+        NomeUsuario: document.getElementById('NomeUsuario').value.trim(),
+        Password: document.getElementById('Password').value
       };
 
-      try {
-        const r = await fetch('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(body)
-        });
+      const loginResp = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
 
-        if (r.ok) {
-          location.href = '/admin-home.html';
-        } else if (r.status === 401) {
-          msg.className = 'mt-3 small text-danger';
-          msg.textContent = 'Credenciais inválidas.';
-        } else {
-          const text = await r.text();
-          msg.className = 'mt-3 small text-warning';
-          msg.textContent = 'Falha ao autenticar: ' + (text || r.status);
-        }
-      } catch (err) {
-        msg.className = 'mt-3 small text-danger';
-        msg.textContent = 'Erro de conexão.';
-        console.error(err);
-      } finally {
-        btn.disabled = false;
+      if (!loginResp.ok) {
+        msg.className = 'text-danger small';
+        msg.textContent = 'Credenciais inválidas.';
+        return;
+      }
+
+      const meResp = await fetch('/auth/me', { credentials: 'include' });
+      if (!meResp.ok) {
+        msg.className = 'text-warning small';
+        msg.textContent = 'Falha ao obter perfil.';
+        return;
+      }
+      
+      const me = await meResp.json();
+      const nivel = (me.AccessLevel || me.accessLevel || '').toString();
+
+      if (/Admin/i.test(nivel))
+        location.href = '/acessLevel/admin/home.html';
+
+      else if (/Gerente/i.test(nivel))
+        location.href = '/acessLevel/gerente/home.html';
+
+      else if (/Vendedor/i.test(nivel))
+        location.href = '/acessLevel/vendedor/home.html';
+
+      else {
+        msg.className = 'text-warning small';
+        msg.textContent = 'Perfil sem página configurada.';
       }
     });
   </script>
 </body>
+
 </html>

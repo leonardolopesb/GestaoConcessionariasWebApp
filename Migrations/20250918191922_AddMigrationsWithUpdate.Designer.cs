@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestaoConcessionariasWebApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250918030308_AddUserSoftDelete")]
-    partial class AddUserSoftDelete
+    [Migration("20250918191922_AddMigrationsWithUpdate")]
+    partial class AddMigrationsWithUpdate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

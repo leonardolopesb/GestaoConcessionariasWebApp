@@ -11,7 +11,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-// [Authorize]
+[Authorize(Roles = "Admin")]
 public sealed class ClientesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;

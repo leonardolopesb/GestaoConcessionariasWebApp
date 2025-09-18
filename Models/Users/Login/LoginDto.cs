@@ -1,9 +1,7 @@
-﻿namespace GestaoConcessionariasWebApp.Models.Users.Login
+﻿namespace GestaoConcessionariasWebApp.Models.Users.Login;
+
+public sealed class LoginDto
 {
-    public sealed class LoginDto
-    {
-        public string UserName { get; set; } = default!;
-        public string Password { get; set; } = default!;
-        public bool RememberMe { get; set; }
-    }
+    public string NomeUsuario { get; set; } = default!;
+    public string Password { get; set; } = default!;
 }
