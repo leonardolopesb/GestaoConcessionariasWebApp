@@ -1,41 +1,66 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/site.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/site.css" rel="stylesheet">
 </head>
 
 <body class="auth-wrapper container py-5" style="max-width:480px">
-    <div class="card auth-card p-4">
-        <h1 class="mb-4">Login</h1>
+  <div class="card auth-card p-4">
+    <h1 class="mb-4">Login</h1>
 
-        <form id="frmLogin" class="vstack gap-3">
-            <input id="email" class="form-control" placeholder="E-mail" />
-            <input id="password" class="form-control" type="password" placeholder="Senha" />
-            <button class="btn btn-primary btn-sm">Entrar</button>
-        </form>
+    <form id="frmLogin" class="vstack gap-3">
+      <input id="username" class="form-control" placeholder="Usuário" autocomplete="username" required />
+      <input id="password" class="form-control" type="password" placeholder="Senha" autocomplete="current-password" required />
+      <button id="btnLogin" class="btn btn-primary btn-sm">Entrar</button>
+    </form>
 
-        <div id="msg" class="mt-3 text-danger"></div>
-    </div>
+    <div id="msg" class="mt-3 small"></div>
+  </div>
 
-    <script>
-        document.getElementById('frmLogin').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const body = { Email: email.value, Password: password.value };
-            const r = await fetch('/auth/login', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            if (r.ok) {
-                location.href = '/admin-home.html';
-            } else {
-                msg.textContent = 'Credenciais inválidas.';
-            }
+  <script>
+    const form = document.getElementById('frmLogin');
+    const btn  = document.getElementById('btnLogin');
+    const msg  = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+      btn.disabled = true;
+
+      const body = {
+        userName: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const r = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(body)
         });
-    </script>
-</body>
 
+        if (r.ok) {
+          location.href = '/admin-home.html';
+        } else if (r.status === 401) {
+          msg.className = 'mt-3 small text-danger';
+          msg.textContent = 'Credenciais inválidas.';
+        } else {
+          const text = await r.text();
+          msg.className = 'mt-3 small text-warning';
+          msg.textContent = 'Falha ao autenticar: ' + (text || r.status);
+        }
+      } catch (err) {
+        msg.className = 'mt-3 small text-danger';
+        msg.textContent = 'Erro de conexão.';
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
 </html>
