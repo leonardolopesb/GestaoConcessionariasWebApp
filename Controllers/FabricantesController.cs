@@ -1,108 +1,104 @@
 ﻿using GestaoConcessionariasWebApp.Data;
 using GestaoConcessionariasWebApp.Models.Fabricantes;
 using GestaoConcessionariasWebApp.Models.Fabricantes.Create;
-using GestaoConcessionariasWebApp.Models.Users.Roles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace GestaoConcessionariasWebApp.Controllers
+namespace GestaoConcessionariasWebApp.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+// [Authorize(Roles = "Admin")]
+public class FabricantesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class FabricantesController : ControllerBase
+    private readonly ApplicationDbContext _db;
+    public FabricantesController(ApplicationDbContext db) => _db = db;
+
+
+    // GET: api/fabricantes
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
     {
-        private readonly ApplicationDbContext _db;
-        public FabricantesController(ApplicationDbContext db) => _db = db;
+        var fabricantes = await _db.Fabricantes
+            .AsNoTracking()
+            .ToListAsync();
 
+        return Ok(fabricantes);
+    }
 
-        // GET: api/fabricantes
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var fabricantes = await _db.Fabricantes
-                .AsNoTracking()
-                .ToListAsync();
+    // GET: api/fabricantes/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var fabricante = await _db.Fabricantes.FindAsync(id);
+        if (fabricante == null) return NotFound();
 
-            return Ok(fabricantes);
-        }
+        return Ok(fabricante);
+    }
 
-        // GET: api/fabricantes/{id}
-        [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetById(Guid id)
-        {
-            var fabricante = await _db.Fabricantes.FindAsync(id);
-            if (fabricante == null) return NotFound();
+    // GET: api/fabricantes/deleted
+    [HttpGet("deleted")]
+    public async Task<IActionResult> GetDeleted()
+    {
+        var itens = await _db.Fabricantes
+            .IgnoreQueryFilters()
+            .Where(f => f.IsDeleted)
+            .AsNoTracking()
+            .OrderBy(f => f.NomeFabricante)
+            .ToListAsync();
 
-            return Ok(fabricante);
-        }
+        return Ok(itens);
+    }
 
-        // GET: api/fabricantes/deleted
-        [HttpGet("deleted")]
-        public async Task<IActionResult> GetDeleted()
-        {
-            var itens = await _db.Fabricantes
-                .IgnoreQueryFilters()
-                .Where(f => f.IsDeleted)
-                .AsNoTracking()
-                .OrderBy(f => f.NomeFabricante)
-                .ToListAsync();
+    // POST: api/fabricantes
+    [HttpPost]
+    public async Task<IActionResult> Post([FromBody] CreateFabricanteDto dto)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            return Ok(itens);
-        }
+        var fabricante = Fabricante.Create(
+            dto.NomeFabricante,
+            dto.PaisOrigem, 
+            dto.AnoFundacao,
+            dto.Website
+        );
 
-        // POST: api/fabricantes
-        [HttpPost]
-        [Authorize(Roles = $"{Roles.Admin},{Roles.Gerente}")]
-        public async Task<IActionResult> Post([FromBody] CreateFabricanteDto dto)
-        {
-            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        _db.Fabricantes.Add(fabricante);
+        await _db.SaveChangesAsync();
 
-            var fabricante = Fabricante.Create(
-                dto.NomeFabricante,
-                dto.PaisOrigem, 
-                dto.AnoFundacao,
-                dto.Website
-            );
+        return CreatedAtAction(nameof(GetById), new { id = fabricante.Id }, fabricante);
+    }
 
-            _db.Fabricantes.Add(fabricante);
-            await _db.SaveChangesAsync();
+    // POST: api/fabricantes/{id}/restore
+    [HttpPost("{id:guid}/restore")]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var fabricante = await _db.Fabricantes
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(f => f.Id == id);
 
-            return CreatedAtAction(nameof(GetById), new { id = fabricante.Id }, fabricante);
-        }
+        if (fabricante is null) return NotFound();
+        if (!fabricante.IsDeleted) return BadRequest("Item não está deletado.");
 
-        // POST: api/fabricantes/{id}/restore
-        [HttpPost("{id:guid}/restore")]
-        public async Task<IActionResult> Restore(Guid id)
-        {
-            var fabricante = await _db.Fabricantes
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(f => f.Id == id);
+        typeof(Fabricante)
+            .GetProperty(nameof(fabricante.IsDeleted))!
+            .SetValue(fabricante, false);
 
-            if (fabricante is null) return NotFound();
-            if (!fabricante.IsDeleted) return BadRequest("Item não está deletado.");
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
 
-            typeof(Fabricante)
-                .GetProperty(nameof(fabricante.IsDeleted))!
-                .SetValue(fabricante, false);
+    // DELETE: api/fabricantes/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> SoftDelete(Guid id)
+    {
+        var fabricante = await _db.Fabricantes.FindAsync(id);
+        if (fabricante == null) return NotFound();
 
-            await _db.SaveChangesAsync();
-            return NoContent();
-        }
+        fabricante.Delete();
+        await _db.SaveChangesAsync();
 
-        // DELETE: api/fabricantes/{id}
-        [HttpDelete("{id:guid}")]
-        [Authorize(Roles = Roles.Admin)]
-        public async Task<IActionResult> SoftDelete(Guid id)
-        {
-            var fabricante = await _db.Fabricantes.FindAsync(id);
-            if (fabricante == null) return NotFound();
-
-            fabricante.Delete();
-            await _db.SaveChangesAsync();
-
-            return NoContent();
-        }
+        return NoContent();
     }
 }

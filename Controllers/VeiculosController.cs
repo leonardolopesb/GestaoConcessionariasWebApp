@@ -10,7 +10,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+// [Authorize]
 public class VeiculosController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
