@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <title>Veículos</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="container py-4">
-  <h1 class="mb-4">Lista de Veículos</h1>
 
-  <div class="d-flex gap-2 mb-3">
-    <button id="btnCarregar" class="btn btn-primary">Carregar Veículos</button>
-    <button id="btnDeletados" class="btn btn-secondary">Ver Veículos Deletados</button>
+<body class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="mb-0">Veículos</h1>
+    <div class="d-flex gap-2">
+      <button id="btnCarregar" class="btn btn-primary">Carregar Veículos</button>
+      <button id="btnCadastro" class="btn btn-secondary">Cadastrar Novo Veículo</button>
+    </div>
   </div>
+
+  <div id="msg" class="small"></div>
 
   <table class="table table-bordered table-striped">
     <thead class="table-dark">
@@ -20,43 +25,70 @@
         <th>Modelo</th>
         <th>Ano</th>
         <th>Preço</th>
-        <th>Fabricante</th>
         <th>Tipo</th>
+        <th>Nome do Fabricante</th>
         <th>Descrição</th>
       </tr>
     </thead>
     <tbody id="tbody">
-      <tr><td colspan="7">Clique em "Carregar Veículos"</td></tr>
+      <tr>
+        <td colspan="7">Clique em "Carregar Veículos".</td>
+      </tr>
     </tbody>
   </table>
 
+  <script src="/js/auth-guard.js"></script>
   <script>
+    // exige login de Gerente
+    requireAuth('Gerente');
+
     const tbody = document.getElementById('tbody');
-    document.getElementById('btnCarregar').addEventListener('click', async () => {
+    const msg = document.getElementById('msg');
+    const showMsg = (t, c = 'danger') => { msg.className = `small text-${c}`; msg.textContent = t; };
+
+    document.getElementById('btnCarregar').addEventListener('click', loadVeiculos);
+
+    async function loadVeiculos() {
       tbody.innerHTML = `<tr><td colspan="7">Carregando...</td></tr>`;
+      msg.textContent = '';
       try {
         const r = await fetch('/api/veiculos', { credentials: 'include' });
-        if (!r.ok) throw new Error('Falha ao buscar');
-        const data = await r.json();
-        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo.</td></tr>`; return; }
+        if (!r.ok) throw new Error('Falha ao buscar veículos');
+        const list = await r.json();
+
+        if (!Array.isArray(list) || list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado.</td></tr>`;
+          return;
+        }
+
         tbody.innerHTML = '';
-        for (const v of data) {
+        for (const v of list) {
+          const precoFmt = typeof v.preco === 'number'
+            ? v.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : (v.preco ?? '');
+
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
               <td>${v.id}</td>
-              <td>${v.modelo ?? ''}</td>
-              <td>${v.anoFabricacao ?? ''}</td>
-              <td>${v.preco ?? ''}</td>
-              <td>${v.FabricanteId}</td>
-              <td>${v.tipoVeiculo ?? ''}</td>
+              <td>${v.modelo}</td>
+              <td>${v.anoFabricacao}</td>
+              <td>${precoFmt}</td>
+              <td>${v.tipoVeiculo}</td>
+              <td>${v.fabricanteNome}</td>
               <td>${v.descricao ?? ''}</td>
             </tr>`);
         }
-      } catch(e){ tbody.innerHTML = `<tr><td colspan="7" class="text-danger">Erro</td></tr>`; console.error(e); }
-    });
-    document.getElementById('btnDeletados').addEventListener('click', () => {
-      location.href = '/veiculos/veiculos-deletados.html';
+      } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-danger">Erro ao carregar.</td></tr>`;
+        showMsg('Erro ao carregar veículos.');
+      }
+    }
+
+    document.getElementById('btnCadastro').addEventListener('click', () => {
+      location.href = '/tabelas/veiculos/cadastro.html';
     });
   </script>
 </body>
+
 </html>

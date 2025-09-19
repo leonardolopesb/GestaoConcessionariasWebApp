@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace GestaoConcessionariasWebApp.Models.Veiculos.Create
+﻿namespace GestaoConcessionariasWebApp.Models.Veiculos.Create
 {
     public class CreateVeiculoDto
     {

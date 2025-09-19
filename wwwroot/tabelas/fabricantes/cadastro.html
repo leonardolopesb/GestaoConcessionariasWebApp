@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Fabricante</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:900px">
+
+    <h1 class="mb-4">Cadastrar Fabricante</h1>
+
+    <form id="frmFab" class="vstack gap-3">
+        <div id="msg" class="small"></div>
+
+        <input id="nome" class="form-control" maxlength="100" placeholder="Nome do Fabricante" required>
+
+        <div class="row g-2">
+            <div class="col-md-6">
+                <input id="pais" class="form-control" maxlength="50" placeholder="País de Origem" required>
+            </div>
+            <div class="col-md-6">
+                <input id="ano" type="number" class="form-control" placeholder="Ano de Fundação" min="1800" max="2100"
+                    required>
+            </div>
+        </div>
+
+        <input id="website" class="form-control" placeholder="https://exemplo.com" required>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm">Salvar</button>
+            <a href="/tabelas/fabricantes/fabricantes.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+        </div>
+    </form>
+
+    <script>
+        const frm = document.getElementById('frmFab');
+        const nome = document.getElementById('nome');
+        const pais = document.getElementById('pais');
+        const ano = document.getElementById('ano');
+        const website = document.getElementById('website');
+        const msgEl = document.getElementById('msg');
+
+        const currentYear = new Date().getFullYear();
+        const reUrl = /^(https?:\/\/)[^\s]+$/i;
+
+        function showMsg(text, type = 'danger') {
+            msgEl.className = `alert alert-${type}`;
+            msgEl.textContent = text;
+        }
+        function clearMsg() { msgEl.className = ''; msgEl.textContent = ''; }
+
+        function validate() {
+            const vNome = nome.value.trim();
+            const vPais = pais.value.trim();
+            const vAno = Number(ano.value);
+            const vSite = website.value.trim();
+
+            if (!vNome) return 'O nome do fabricante é obrigatório.';
+            if (vNome.length > 100) return 'Nome do fabricante: máximo 100 caracteres.';
+
+            if (!vPais) return 'O país de origem é obrigatório.';
+            if (vPais.length > 50) return 'País de origem: máximo 50 caracteres.';
+
+            if (!Number.isInteger(vAno) || vAno > currentYear)
+                return `Ano de fundação deve ser menor do que o ano atual (${currentYear}).`;
+
+            if (!vSite) return 'O Website é obrigatório.';
+
+            if (!reUrl.test(vSite) || vSite.length > 255)
+                return 'Website inválido. Use: https://...';
+
+            return null;
+        }
+
+        frm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMsg();
+
+            const err = validate();
+            if (err) { showMsg(err); return; }
+
+            const body = {
+                nomeFabricante: nome.value.trim(),
+                paisOrigem: pais.value.trim(),
+                anoFundacao: Number(ano.value),
+                website: website.value.trim()
+            };
+
+            try {
+                const r = await fetch('/api/fabricantes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+
+                if (r.ok) {
+                    alert('Fabricante cadastrado com sucesso!');
+                    // redireciona para a lista
+                    location.href = '/tabelas/fabricantes/fabricantes.html';
+                } else {
+                    const txt = await r.text();
+                    showMsg('Erro ao salvar: ' + txt);
+                }
+            } catch (ex) {
+                showMsg('Erro de rede: ' + (ex?.message || ex));
+            }
+        });
+    </script>
+
+</body>
+
+</html>

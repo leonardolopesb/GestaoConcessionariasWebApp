@@ -9,7 +9,6 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("auth")]
-// [Authorize]
 public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _user;

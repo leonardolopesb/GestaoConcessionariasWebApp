@@ -9,7 +9,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class FabricantesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -18,6 +18,7 @@ public class FabricantesController : ControllerBase
 
     // GET: api/fabricantes
     [HttpGet]
+    [Authorize(Roles = "Admin,Gerente,Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var fabricantes = await _db.Fabricantes
@@ -29,6 +30,7 @@ public class FabricantesController : ControllerBase
 
     // GET: api/fabricantes/{id}
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,Gerente,Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var fabricante = await _db.Fabricantes.FindAsync(id);
@@ -39,6 +41,7 @@ public class FabricantesController : ControllerBase
 
     // GET: api/fabricantes/deleted
     [HttpGet("deleted")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetDeleted()
     {
         var itens = await _db.Fabricantes
@@ -53,6 +56,7 @@ public class FabricantesController : ControllerBase
 
     // POST: api/fabricantes
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Post([FromBody] CreateFabricanteDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -72,6 +76,7 @@ public class FabricantesController : ControllerBase
 
     // POST: api/fabricantes/{id}/restore
     [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var fabricante = await _db.Fabricantes
@@ -91,6 +96,7 @@ public class FabricantesController : ControllerBase
 
     // DELETE: api/fabricantes/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
         var fabricante = await _db.Fabricantes.FindAsync(id);

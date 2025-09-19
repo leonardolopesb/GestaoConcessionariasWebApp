@@ -10,7 +10,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class VeiculosController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -18,10 +18,23 @@ public class VeiculosController : ControllerBase
 
     // GET: api/veiculos
     [HttpGet]
+    [Authorize(Roles = "Gerente,Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var lista = await _db.Veiculos
             .AsNoTracking()
+            .Include(v => v.Fabricante)
+            .Select(v => new {
+                v.Id,
+                v.Modelo,
+                v.AnoFabricacao,
+                v.Preco,
+                v.TipoVeiculo,
+                v.Descricao,
+                v.IsDeleted,
+                v.FabricanteId,
+                fabricanteNome = v.Fabricante.NomeFabricante
+            })
             .ToListAsync();
 
         return Ok(lista);
@@ -29,6 +42,7 @@ public class VeiculosController : ControllerBase
 
     // GET: api/veiculos/{id}
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Gerente,Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var v = await _db.Veiculos
@@ -40,6 +54,7 @@ public class VeiculosController : ControllerBase
 
     // POST: api/veiculos
     [HttpPost]
+    [Authorize(Roles = "Gerente")]
     //[Authorize(Roles = $"{Roles.Admin},{Roles.Gerente}")]
     public async Task<IActionResult> Post([FromBody] CreateVeiculoDto dto)
     {
@@ -59,7 +74,7 @@ public class VeiculosController : ControllerBase
 
     // PUT: api/veiculos/{id}
     [HttpPut("{id:guid}")]
-    //[Authorize(Roles = $"{Roles.Admin},{Roles.Gerente}")]
+    //[Authorize(Roles = "Gerente")]
     /*
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateVeiculoDto dto)
     {
@@ -77,7 +92,7 @@ public class VeiculosController : ControllerBase
 
     // DELETE (soft): api/veiculos/{id}
     [HttpDelete("{id:guid}")]
-    //[Authorize(Roles = Roles.Admin)]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
         var v = await _db.Veiculos.FindAsync(id);
@@ -90,6 +105,7 @@ public class VeiculosController : ControllerBase
 
     // GET: api/veiculos/deleted
     [HttpGet("deleted")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetDeleted()
     {
         var itens = await _db.Veiculos

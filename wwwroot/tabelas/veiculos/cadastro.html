@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Veículo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-4" style="max-width:900px">
+  <h1 class="mb-4">Cadastrar Veículo</h1>
+
+  <form id="frmVeic" class="vstack gap-3" novalidate>
+    <div id="msg" class="small"></div>
+
+    <div class="row g-2">
+      <div class="col-md-6">
+        <label class="form-label">Modelo</label>
+        <input id="modelo" class="form-control" maxlength="100" placeholder="Ex.: Civic" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Ano de Fabricação</label>
+        <input id="ano" type="number" class="form-control" min="1900" max="2100" placeholder="Ex.: 2021" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Preço (R$)</label>
+        <input id="preco" type="number" step="0.01" min="0.01" class="form-control" placeholder="Ex.: 95000.00" required>
+      </div>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-md-6">
+        <label class="form-label">Fabricante</label>
+        <select id="fabricanteId" class="form-select" required>
+          <option value="">Carregando fabricantes...</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Tipo de Veículo</label>
+        <select id="tipoVeiculo" class="form-select" required>
+          <option value="">Selecione</option>
+          <option value="1">Carro</option>
+          <option value="2">Moto</option>
+          <option value="3">Caminhão</option>
+          <option value="4">Van</option>
+          <option value="5">Ônibus</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="form-label">Descrição (opcional)</label>
+      <textarea id="descricao" class="form-control" maxlength="500" rows="3" placeholder="Até 500 caracteres."></textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success btn-sm">Salvar</button>
+      <a href="/tabelas/veiculos/veiculos.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </form>
+
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    // exige login do Gerente
+    requireAuth('Gerente');
+
+    const frm = document.getElementById('frmVeic');
+    const msgEl = document.getElementById('msg');
+    const modelo = document.getElementById('modelo');
+    const ano = document.getElementById('ano');
+    const preco = document.getElementById('preco');
+    const fabricanteId = document.getElementById('fabricanteId');
+    const tipoVeiculo = document.getElementById('tipoVeiculo');
+    const descricao = document.getElementById('descricao');
+
+    const currentYear = new Date().getFullYear();
+
+    function showMsg(t, kind='danger'){ msgEl.className = `alert alert-${kind}`; msgEl.textContent = t; }
+    function clearMsg(){ msgEl.className = 'small'; msgEl.textContent = ''; }
+
+    (async function loadFabricantes(){
+      try{
+        const r = await fetch('/api/fabricantes', { credentials: 'include' });
+        if(!r.ok) throw new Error('Falha ao buscar fabricantes');
+        const list = await r.json();
+
+        fabricanteId.innerHTML = '<option value="">Selecione</option>';
+        if(Array.isArray(list) && list.length){
+          for(const f of list){
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = f.nomeFabricante || '(sem nome)';
+            fabricanteId.appendChild(opt);
+          }
+        }else{
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Nenhum fabricante encontrado';
+          fabricanteId.appendChild(opt);
+        }
+      }catch(e){
+        fabricanteId.innerHTML = '<option value="">Erro ao carregar</option>';
+        showMsg('Erro ao carregar fabricantes.');
+        console.error(e);
+      }
+    })();
+
+    function validate(){
+      const vModelo = modelo.value.trim();
+      const vAno = Number(ano.value);
+      const vPreco = Number(preco.value);
+      const vFab = fabricanteId.value;
+      const vTipo = tipoVeiculo.value;
+      const vDesc = descricao.value.trim();
+
+      if(!vModelo) return 'O modelo é obrigatório.';
+      if(vModelo.length > 100) return 'Modelo: máximo 100 caracteres.';
+
+      if(!Number.isInteger(vAno) || vAno < 1900 || vAno > currentYear)
+        return `Ano de fabricação deve estar entre 1900 e ${currentYear}.`;
+
+      if(!(vPreco > 0)) return 'O preço deve ser maior que 0.';
+
+      if(!vFab) return 'Selecione um fabricante.';
+      if(!vTipo && vTipo !== 0) return 'Selecione o tipo de veículo.';
+
+      if(vDesc && vDesc.length > 500) return 'Descrição: máximo 500 caracteres.';
+
+      return null;
+    }
+
+    frm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const err = validate();
+      if(err){ showMsg(err); return; }
+
+      const body = {
+        modelo: modelo.value.trim(),
+        anoFabricacao: Number(ano.value),
+        preco: Number(preco.value),
+        fabricanteId: fabricanteId.value,
+        tipoVeiculo: Number(tipoVeiculo.value),
+        descricao: descricao.value.trim() || null
+      };
+
+      try{
+        const r = await fetch('/api/veiculos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(body)
+        });
+
+        if(r.ok){
+          alert('Veículo cadastrado com sucesso!');
+          location.href = '/tabelas/veiculos/veiculos.html';
+        }else{
+          const txt = await r.text();
+          showMsg('Erro ao salvar: ' + txt);
+        }
+      }catch(ex){
+        showMsg('Erro de rede: ' + (ex?.message || ex));
+      }
+    });
+  </script>
+</body>
+</html>

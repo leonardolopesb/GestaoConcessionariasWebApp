@@ -10,13 +10,14 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class ConcessionariasController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     public ConcessionariasController(ApplicationDbContext db) => _db = db;
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var lista = await _db.Concessionarias
@@ -27,6 +28,7 @@ public class ConcessionariasController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var c = await _db.Concessionarias
@@ -36,6 +38,7 @@ public class ConcessionariasController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Post([FromBody] CreateConcessionariaDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -63,6 +66,7 @@ public class ConcessionariasController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateConcessionariaDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -91,6 +95,7 @@ public class ConcessionariasController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
         var c = await _db.Concessionarias.FindAsync(id);
@@ -102,6 +107,7 @@ public class ConcessionariasController : ControllerBase
     }
 
     [HttpGet("deleted")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetDeleted()
     {
         var itens = await _db.Concessionarias
@@ -111,6 +117,7 @@ public class ConcessionariasController : ControllerBase
     }
 
     [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var c = await _db.Concessionarias

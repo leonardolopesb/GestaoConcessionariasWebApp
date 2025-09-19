@@ -28,7 +28,15 @@
             </div>
         </div>
 
-        <input id="endereco" class="form-control" placeholder="Endereço completo" maxlength="255" required>
+        <div class="row g-2">
+            <div class="col-md-8">
+                <input id="endereco" class="form-control" placeholder="Endereço (Rua, Av., etc.)" maxlength="255"
+                    required>
+            </div>
+            <div class="col-md-4">
+                <input id="addressNumber" class="form-control" placeholder="Número do Endereço" maxlength="20">
+            </div>
+        </div>
 
         <div class="row g-2">
             <div class="col-md-6">
@@ -49,56 +57,125 @@
     </form>
 
     <script>
-        let cepValido = false;
+        const reCep8 = /^\d{8}$/;
+        const reTelefone = /^[0-9()\-\s+]{8,20}$/;
+        const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const max = { nome: 100, estado: 50, cidade: 50, endereco: 255 };
 
-        document.getElementById('cep').addEventListener('blur', async () => {
-            const raw = cep.value.replace(/\D/g, '');
-            cepValido = false;
+        // cache dos campos
+        const frm = document.getElementById('frmNova');
+        const nome = document.getElementById('nome');
+        const cep = document.getElementById('cep');
+        const estado = document.getElementById('estado');
+        const cidade = document.getElementById('cidade');
+        const endereco = document.getElementById('endereco');
+        const addressNumber = document.getElementById('addressNumber');
+        const telefone = document.getElementById('telefone');
+        const email = document.getElementById('email');
+        const capacidade = document.getElementById('capacidade');
+        const msgEl = document.getElementById('msg');
 
-            if (raw.length !== 8) {
-                showMsg('CEP inválido.', 'danger');
-                return;
-            }
+        let cepValidoViaCEP = false;
+
+        function showMsg(text, type = 'danger') {
+            msgEl.className = `alert alert-${type}`;
+            msgEl.textContent = text;
+        }
+        function clearMsg() { msgEl.className = ''; msgEl.textContent = ''; }
+
+        // Normaliza CEP enquanto digita
+        cep.addEventListener('input', () => {
+            cep.value = cep.value.replace(/\D/g, '').slice(0, 8);
+            cepValidoViaCEP = false;
+        });
+
+        // Consulta ViaCEP ao sair do campo
+        cep.addEventListener('blur', async () => {
+            const raw = cep.value.trim();
+            cepValidoViaCEP = false;
+
+            if (!reCep8.test(raw)) { showMsg('CEP inválido (8 dígitos).'); return; }
 
             try {
                 const r = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
                 const data = await r.json();
+                if (data.erro) { showMsg('CEP não encontrado.'); return; }
 
-                if (data.erro) {
-                    showMsg('CEP não encontrado.', 'warning');
-                    return;
-                }
-
-                // preenche os campos automaticamente com os dados retornados da API da ViaCEP
+                // Preenche automaticamente
                 estado.value = data.uf || '';
                 cidade.value = data.localidade || '';
                 const partes = [data.logradouro, data.bairro, data.complemento].filter(Boolean);
-                endereco.value = partes.join(', ');
+                if (!endereco.value) endereco.value = partes.join(', ');
 
                 clearMsg();
-                cepValido = true;
+                cepValidoViaCEP = true;
             } catch {
-                showMsg('Erro ao consultar ViaCEP.', 'danger');
+                showMsg('Erro ao consultar a API.');
             }
         });
 
-        document.getElementById('frmNova').addEventListener('submit', async (e) => {
+        function validateForm() {
+            const v = {
+                nome: nome.value.trim(),
+                cep: cep.value.trim(),
+                estado: estado.value.trim(),
+                cidade: cidade.value.trim(),
+                endereco: endereco.value.trim(),
+                addressNumber: addressNumber.value.trim(),
+                telefone: telefone.value.trim(),
+                email: email.value.trim(),
+                capacidade: capacidade.value.trim()
+            };
+
+            // obrigatoriedade
+            if (!v.nome) return 'O Nome é obrigatório.';
+            if (!v.cep) return 'O CEP é obrigatório.';
+            if (!v.estado) return 'O Estado é obrigatório.';
+            if (!v.cidade) return 'A Cidade é obrigatória.';
+            if (!v.endereco) return 'O Endereço é obrigatório.';
+            if (!v.addressNumber) return 'O Número do Endereço é obrigatório.';
+            if (!v.telefone) return 'O Telefone é obrigatório.';
+            if (!v.email) return 'O E-mail é obrigatório.';
+            if (!v.capacidade) return 'A Capacidade é obrigatória.';
+
+            // tamanhos
+            if (v.nome.length > max.nome) return `Nome: máximo ${max.nome} caracteres.`;
+            if (v.estado.length > max.estado) return `Estado: máximo ${max.estado} caracteres.`;
+            if (v.cidade.length > max.cidade) return `Cidade: máximo ${max.cidade} caracteres.`;
+            if (v.endereco.length > max.endereco) return `Endereço: máximo ${max.endereco} caracteres.`;
+
+            // formatos
+            if (!reCep8.test(v.cep)) return 'CEP inválido. Deve ter 8 dígitos.';
+            if (!reTelefone.test(v.telefone)) return 'Telefone inválido. É necessário ter entre 8 e 20 dígitos.';
+            if (!reEmail.test(v.email)) return 'E-mail inválido. Formato incorreto.';
+
+            // capacidade numérica
+            const cap = Number(v.capacidade);
+            if (!Number.isInteger(cap) || cap <= 0) return 'Capacidade deve ser um inteiro > 0.';
+
+            // exigimos validação ViaCEP bem-sucedida
+            if (!cepValidoViaCEP) return 'Valide o CEP (ViaCEP) antes de salvar.';
+
+            return null; // ok
+        }
+
+        frm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            clearMsg();
 
-            if (!cepValido) {
-                showMsg('Não é possível cadastrar: CEP inválido ou não encontrado.', 'danger');
-                return;
-            }
+            const error = validateForm();
+            if (error) { showMsg(error); return; }
 
+            // prepara payload (CEP apenas números)
             const body = {
-                nome: nome.value,
-                cep: cep.value,
-                estado: estado.value,
-                cidade: cidade.value,
-                endereco: endereco.value,
-                telefone: telefone.value,
-                email: email.value,
-                capacidadeMaximaVeiculos: capacidade.value
+                nome: nome.value.trim(),
+                cep: cep.value.replace(/\D/g, ''),
+                estado: estado.value.trim(),
+                cidade: cidade.value.trim(),
+                endereco: `${endereco.value.trim()}. nº ${addressNumber.value.trim()}`,
+                telefone: telefone.value.trim(),
+                email: email.value.trim(),
+                capacidadeMaximaVeiculos: Number(capacidade.value.trim())
             };
 
             try {
@@ -110,27 +187,17 @@
                 });
 
                 if (r.ok) {
-                    showMsg('Concessionária cadastrada com sucesso!', 'success');
-                    e.target.reset();
+                    alert('Concessionária cadastrada com sucesso!');
+                    frm.reset();
+                    cepValidoViaCEP = false;
                 } else {
                     const txt = await r.text();
-                    showMsg('Erro ao cadastrar: ' + txt, 'danger');
+                    showMsg('Erro ao cadastrar: ' + txt);
                 }
-            } catch (err) {
-                showMsg('Erro de rede: ' + err.message, 'danger');
+            } catch (ex) {
+                showMsg('Erro de rede: ' + (ex?.message || ex));
             }
         });
-
-        function showMsg(msg, type) {
-            const el = document.getElementById('msg');
-            el.className = `alert alert-${type}`;
-            el.textContent = msg;
-        }
-        function clearMsg() {
-            const el = document.getElementById('msg');
-            el.className = '';
-            el.textContent = '';
-        }
     </script>
 
 </body>

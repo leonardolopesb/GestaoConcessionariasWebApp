@@ -11,7 +11,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public sealed class ClientesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -19,6 +19,7 @@ public sealed class ClientesController : ControllerBase
 
     // GET: api/clientes
     [HttpGet]
+    [Authorize(Roles = "Admin, Vendedor")]
     public async Task<IActionResult> GetAll([FromQuery] string? q)
     {
         var query = _db.Clientes.AsNoTracking();
@@ -33,6 +34,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     // GET: api/clientes/{id}
+    [Authorize(Roles = "Admin, Vendedor")]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -42,6 +44,7 @@ public sealed class ClientesController : ControllerBase
 
     // POST: api/clientes
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Post([FromBody] CreateClienteDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -68,6 +71,7 @@ public sealed class ClientesController : ControllerBase
 
     // PUT: api/clientes/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteDto dto)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -96,6 +100,7 @@ public sealed class ClientesController : ControllerBase
 
     // DELETE (soft): api/clientes/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
         var c = await _db.Clientes.FindAsync(id);
@@ -108,6 +113,7 @@ public sealed class ClientesController : ControllerBase
 
     // GET: api/clientes/deleted
     [HttpGet("deleted")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetDeleted()
     {
         var itens = await _db.Clientes
@@ -120,6 +126,7 @@ public sealed class ClientesController : ControllerBase
 
     // POST: api/clientes/{id}/restore
     [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var c = await _db.Clientes.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
@@ -133,6 +140,7 @@ public sealed class ClientesController : ControllerBase
 
     // GET: api/clientes/by-cpf/12345678901
     [HttpGet("by-cpf/{cpf}")]
+    [Authorize(Roles = "Admin, Vendedor")]
     public async Task<IActionResult> GetByCpf(string cpf)
     {
         var cpfNum = Regex.Replace(cpf ?? "", @"\D", "");
