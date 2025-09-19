@@ -4,20 +4,19 @@ namespace GestaoConcessionariasWebApp.Models.Vendas.Create
 {
     public sealed class CreateVendaDto
     {
-        // TABELA QUE SERÁ PREENCHIDA NO FRONT
-        public string ConcessionariaNome { get; set; } = default!;
-        public string FabricanteNome { get; set; } = default!;
-        public string VeiculoModelo { get; set; } = default!;
-        
+        public string ConcessionariaNomeOuLocalizacao { get; set; } = null!;
 
-        // dados do cliente
-        public string NomeCliente { get; set; } = default!;
-        public string CpfCliente { get; set; } = default!;
-        public string? TelefoneCliente { get; set; }
+        public string FabricanteNomeOuModeloVeiculo { get; set; } = null!;
 
-        // dados da venda
-        [Required] public decimal PrecoVenda { get; set; }
+        public string NomeCliente { get; set; } = null!;
 
-        // o protocolo e a data da venda serão geradoo automaticamente 
+        public string CpfCliente { get; set; } = null!;
+
+        public string TelefoneCliente { get; set; } = null!;
+
+        public DateTime DataVenda { get; set; }
+
+        public decimal PrecoVenda { get; set; }
+
     }
 }

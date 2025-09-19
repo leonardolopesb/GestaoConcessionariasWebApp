@@ -7,28 +7,31 @@ namespace GestaoConcessionariasWebApp.Models.Vendas
 {
     public class Venda
     {
-        [Key] public Guid Id { get; private set; }
+        public Guid Id { get; private set; }
 
-        [Required] public Guid VeiculoId { get; private set; }
-        [Required] public Guid ConcessionariaId { get; private set; }
-        [Required] public Guid ClienteId { get; private set; }
+        public Guid VeiculoId { get; private set; }
 
-        [Required] public DateTime DataVenda { get; private set; }
+        public Guid ConcessionariaId { get; private set; }
 
-        [Required] public decimal PrecoVenda { get; private set; }
+        public Guid ClienteId { get; private set; }
 
-        [Required, StringLength(20)]
-        public string ProtocoloVenda { get; private set; } = default!;
+        public DateTime DataVenda { get; private set; }
+
+        public decimal PrecoVenda { get; private set; }
+
+        public string ProtocoloVenda { get; private set; } = null!;
 
         public bool IsDeleted { get; private set; }
 
-        // APAGAR EM BREVE AS TRÊS VARIÁVEIS
+
         public Veiculo Veiculo { get; private set; } = default!;
         public Concessionaria Concessionaria { get; private set; } = default!;
         public Cliente Cliente { get; private set; } = default!;
 
+        // Construtor protegido para EF
         protected Venda() { }
 
+        // Construtor privado para uso interno
         private Venda(Guid id, Guid veiculoId, Guid concessionariaId, Guid clienteId, DateTime data, decimal preco, string protocolo)
         {
             Id = id == Guid.Empty ? Guid.NewGuid() : id;

@@ -18,11 +18,17 @@
     </div>
   </div>
 
+    <!-- exige login como Vendedor -->
+  <script src="/js/auth-guard.js"></script>
+
   <script>
     document.getElementById('btnLogout').addEventListener('click', async () => {
       await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
       location.href = '/login.html';
     });
+
+    // exige login como Vendedor
+    requireAuth('Vendedor');
   </script>
 </body>
 </html>

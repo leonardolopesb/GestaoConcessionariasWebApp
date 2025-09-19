@@ -4,14 +4,11 @@ namespace GestaoConcessionariasWebApp.Models.Clientes.Create
 {
     public class CreateClienteDto
     {
-        [Required, StringLength(100)]
-        public string Nome { get; set; } = default!;
+        public string Nome { get; set; } = null!;
 
-        [Required, StringLength(14)]
-        public string CPF { get; set; } = default!;
+        public string CPF { get; set; } = null!;
 
-        [StringLength(20)]
-        public string? Telefone { get; set; }
+        public string Telefone { get; set; } = null!;
     }
 
 }

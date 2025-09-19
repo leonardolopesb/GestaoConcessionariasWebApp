@@ -12,7 +12,7 @@ namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Vendedor")]
 public sealed class VendasController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -64,21 +64,21 @@ public sealed class VendasController : ControllerBase
         // Concessionária por nome
         var concessionaria = await _db.Concessionarias
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Nome == dto.ConcessionariaNome);
+            .FirstOrDefaultAsync(c => c.Nome == dto.ConcessionariaNomeOuLocalizacao);
 
         if (concessionaria is null) return BadRequest("Concessionária não encontrada.");
 
         // Fabricante por nome
         var fabricante = await _db.Fabricantes
             .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.NomeFabricante == dto.FabricanteNome);
+            .FirstOrDefaultAsync(f => f.NomeFabricante == dto.FabricanteNomeOuModeloVeiculo);
 
         if (fabricante is null) return BadRequest("Fabricante não encontrado.");
 
         // Veículo por (FabricanteId, Modelo) -> retorna 1 por causa do índice único
         var veiculo = await _db.Veiculos
             .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.FabricanteId == fabricante.Id && v.Modelo == dto.VeiculoModelo);
+            .FirstOrDefaultAsync(v => v.FabricanteId == fabricante.Id && v.Modelo == dto.FabricanteNomeOuModeloVeiculo);
 
         if (veiculo is null) return BadRequest("Veículo não encontrado para esse fabricante e modelo.");
 

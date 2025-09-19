@@ -2,6 +2,6 @@
 
 public sealed class LoginDto
 {
-    public string NomeUsuario { get; set; } = default!;
-    public string Password { get; set; } = default!;
+    public string NomeUsuario { get; set; } = null!;
+    public string Password { get; set; } = null!;
 }

@@ -21,7 +21,12 @@
     <div id="msg" class="mt-3 small"></div>
   </div>
 
+  <!-- redireciona se já estiver logado -->
+  <script src="/js/auth-guard.js"></script>
+
   <script>
+    redirectIfLoggedIn();
+
     const form = document.getElementById('frmLogin');
     const msg = document.getElementById('msg');
 
@@ -53,7 +58,7 @@
         msg.textContent = 'Falha ao obter perfil.';
         return;
       }
-      
+
       const me = await meResp.json();
       const nivel = (me.AccessLevel || me.accessLevel || '').toString();
 

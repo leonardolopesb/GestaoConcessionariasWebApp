@@ -4,28 +4,20 @@ namespace GestaoConcessionariasWebApp.Models.Concessionarias.Create
 {
     public class CreateConcessionariaDto
     {
-        [Required, StringLength(100)]
-        public string Nome { get; set; } = default!;
+        public string Nome { get; set; } = null!;
 
-        [StringLength(10)]
-        public string CEP { get; set; } = string.Empty;
+        public string Endereco { get; set; } = null!;
 
-        [StringLength(50)]
-        public string Estado { get; set; } = string.Empty;
+        public string Cidade { get; set; } = null!;
 
-        [StringLength(50)]
-        public string Cidade { get; set; } = string.Empty;
+        public string Estado { get; set; } = null!;
 
-        [StringLength(255)]
-        public string Endereco { get; set; } = string.Empty;
+        public string CEP { get; set; } = null!;
 
-        [Phone, StringLength(20)]
-        public string Telefone { get; set; } = string.Empty;
+        public string Telefone { get; set; } = null!;
 
-        [EmailAddress, StringLength(100)]
-        public string Email { get; set; } = string.Empty;
+        public string Email { get; set; } = null!;
 
-        [Range(0, int.MaxValue)]
         public int CapacidadeMaximaVeiculos { get; set; }
     }
 }
