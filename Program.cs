@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using GestaoConcessionariasWebApp.Data;
 using GestaoConcessionariasWebApp.Models.Users;
 using Microsoft.AspNetCore.Identity;
@@ -9,9 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder
-    .Services.
-    AddDbContext<ApplicationDbContext>(
-        options =>options
+    .Services
+    .AddDbContext<ApplicationDbContext>(
+        options => options
         .UseSqlServer(connectionString));
 
 builder
@@ -37,6 +39,11 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Events.OnRedirectToLogin = ctx => { ctx.Response.StatusCode = 401; return Task.CompletedTask; };
     options.Events.OnRedirectToAccessDenied = ctx => { ctx.Response.StatusCode = 403; return Task.CompletedTask; };
 });
+
+// Configurando o FluentValidation
+builder.Services
+    .AddFluentValidationAutoValidation()
+    .AddFluentValidationClientsideAdapters();
 
 builder
     .Services

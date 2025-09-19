@@ -1,8 +1,5 @@
 ﻿using GestaoConcessionariasWebApp.Models.Users;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace GestaoConcessionariasWebApp.Data;
 
@@ -12,6 +9,7 @@ public static class IdentitySeeder
     {
         using var scope = services.CreateScope();
 
+        // Declarando variáveis
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
         var role = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

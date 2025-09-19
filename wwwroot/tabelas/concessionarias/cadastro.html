@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Concessionária</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:1200px">
+
+    <h1 class="mb-4">Cadastrar Nova Concessionária</h1>
+
+    <form id="frmNova" class="vstack gap-3">
+        <div id="msg" class="small"></div>
+
+        <input id="nome" class="form-control" maxlength="100" placeholder="Nome da Concessionária" required>
+
+        <div class="row g-2">
+            <div class="col-md-4">
+                <input id="cep" class="form-control" placeholder="CEP (00000-000)" minlength="8" maxlength="9" required>
+            </div>
+            <div class="col-md-4">
+                <input id="estado" class="form-control" placeholder="Estado (UF)" maxlength="50" required>
+            </div>
+            <div class="col-md-4">
+                <input id="cidade" class="form-control" placeholder="Cidade" maxlength="50" required>
+            </div>
+        </div>
+
+        <input id="endereco" class="form-control" placeholder="Endereço completo" maxlength="255" required>
+
+        <div class="row g-2">
+            <div class="col-md-6">
+                <input id="telefone" class="form-control" placeholder="Telefone" maxlength="20">
+            </div>
+            <div class="col-md-6">
+                <input id="email" class="form-control" type="email" placeholder="E-mail" maxlength="100">
+            </div>
+        </div>
+
+        <input id="capacidade" type="number" min="1" class="form-control" placeholder="Capacidade Máxima de Veículos"
+            required>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm">Salvar</button>
+            <a href="/concessionarias.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+        </div>
+    </form>
+
+    <script>
+        let cepValido = false;
+
+        document.getElementById('cep').addEventListener('blur', async () => {
+            const raw = cep.value.replace(/\D/g, '');
+            cepValido = false;
+
+            if (raw.length !== 8) {
+                showMsg('CEP inválido.', 'danger');
+                return;
+            }
+
+            try {
+                const r = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+                const data = await r.json();
+
+                if (data.erro) {
+                    showMsg('CEP não encontrado.', 'warning');
+                    return;
+                }
+
+                // preenche os campos automaticamente com os dados retornados da API da ViaCEP
+                estado.value = data.uf || '';
+                cidade.value = data.localidade || '';
+                const partes = [data.logradouro, data.bairro, data.complemento].filter(Boolean);
+                endereco.value = partes.join(', ');
+
+                clearMsg();
+                cepValido = true;
+            } catch {
+                showMsg('Erro ao consultar ViaCEP.', 'danger');
+            }
+        });
+
+        document.getElementById('frmNova').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!cepValido) {
+                showMsg('Não é possível cadastrar: CEP inválido ou não encontrado.', 'danger');
+                return;
+            }
+
+            const body = {
+                nome: nome.value,
+                cep: cep.value,
+                estado: estado.value,
+                cidade: cidade.value,
+                endereco: endereco.value,
+                telefone: telefone.value,
+                email: email.value,
+                capacidadeMaximaVeiculos: capacidade.value
+            };
+
+            try {
+                const r = await fetch('/api/concessionarias', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+
+                if (r.ok) {
+                    showMsg('Concessionária cadastrada com sucesso!', 'success');
+                    e.target.reset();
+                } else {
+                    const txt = await r.text();
+                    showMsg('Erro ao cadastrar: ' + txt, 'danger');
+                }
+            } catch (err) {
+                showMsg('Erro de rede: ' + err.message, 'danger');
+            }
+        });
+
+        function showMsg(msg, type) {
+            const el = document.getElementById('msg');
+            el.className = `alert alert-${type}`;
+            el.textContent = msg;
+        }
+        function clearMsg() {
+            const el = document.getElementById('msg');
+            el.className = '';
+            el.textContent = '';
+        }
+    </script>
+
+</body>
+
+</html>
