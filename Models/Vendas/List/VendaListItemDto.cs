@@ -2,13 +2,13 @@
 {
     public sealed class VendaListItemDto
     {
+        // Dados que irão para a tabela de listagem de vendas na UI /tabelas/vendas/vendas.html
         public Guid Id { get; set; }
-        public string Protocolo { get; set; } = default!;
+        public Guid VeiculoId { get; set; }
+        public Guid ConcessionariaId { get; set; }
+        public Guid ClienteId { get; set; }
         public DateTime DataVenda { get; set; }
         public decimal PrecoVenda { get; set; }
-        public string VeiculoModelo { get; set; } = default!;
-        public string ConcessionariaNome { get; set; } = default!;
-        public string ClienteNome { get; set; } = default!;
-        public string ClienteCpf { get; set; } = default!;
+        public string Protocolo { get; set; } = default!;
     }
 }

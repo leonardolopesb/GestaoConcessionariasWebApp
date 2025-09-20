@@ -1,22 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace GestaoConcessionariasWebApp.Models.Vendas.Create
+﻿namespace GestaoConcessionariasWebApp.Models.Vendas.Create
 {
     public sealed class CreateVendaDto
     {
-        public string ConcessionariaNomeOuLocalizacao { get; set; } = null!;
+        // Concessionária: permitir busca por nome [que é único] ou localização
+        public string ConcessionariaNomeOuLocalizacao { get; set; } = string.Empty;
 
-        public string FabricanteNomeOuModeloVeiculo { get; set; } = null!;
+        // Fabricante: permitir busca por nome [que é único] porém não armazena, sua função é apenas buscar o veículo
+        public string FabricanteNome { get; set; } = string.Empty;
 
-        public string NomeCliente { get; set; } = null!;
+        // Veículo: permitir busca por modelo, este que vem do fabricante selecionado
+        public string VeiculoModelo { get; set; } = string.Empty;
 
-        public string CpfCliente { get; set; } = null!;
+        // Dados do cliente
+        public string NomeCliente { get; set; } = string.Empty;
+        public string CpfCliente { get; set; } = string.Empty;
+        public string TelefoneCliente { get; set; } = string.Empty;
 
-        public string TelefoneCliente { get; set; } = null!;
-
+        // Dados da venda
         public DateTime DataVenda { get; set; }
-
         public decimal PrecoVenda { get; set; }
-
     }
 }

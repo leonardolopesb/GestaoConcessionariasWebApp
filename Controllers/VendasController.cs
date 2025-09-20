@@ -18,7 +18,67 @@ public sealed class VendasController : ControllerBase
     private readonly ApplicationDbContext _db;
     public VendasController(ApplicationDbContext db) => _db = db;
 
-    // GET: api/vendas
+    #region GETs opcionais que auxiliam a API de Vendas
+
+    // GET api/Vendas/fabricantes
+    [HttpGet("fabricantes")]
+    public async Task<IActionResult> SearchFabricantes([FromQuery] string? nome)
+    {
+        nome ??= string.Empty;
+        var list = await _db.Fabricantes
+            .AsNoTracking()
+            .Where(f => f.NomeFabricante.Contains(nome))
+            .OrderBy(f => f.NomeFabricante)
+            .Select(f => new { f.Id, f.NomeFabricante })
+            .Take(30)
+            .ToListAsync();
+
+        return Ok(list);
+    }
+
+    // GET api/Vendas/modelos
+    [HttpGet("modelos")]
+    public async Task<IActionResult> GetModelosByFabricante([FromQuery] string fabricanteNome)
+    {
+        if (string.IsNullOrWhiteSpace(fabricanteNome))
+            return BadRequest("Fabricante obrigatório.");
+
+        var fab = await _db.Fabricantes.AsNoTracking()
+            .FirstOrDefaultAsync(f => f.NomeFabricante == fabricanteNome);
+        if (fab is null) return NotFound("Fabricante não encontrado.");
+
+        var modelos = await _db.Veiculos.AsNoTracking()
+            .Where(v => v.FabricanteId == fab.Id)
+            .OrderBy(v => v.Modelo)
+            .Select(v => new { v.Id, v.Modelo, v.Preco })
+            .ToListAsync();
+
+        return Ok(modelos);
+    }
+
+    // GET api/Vendas/concessionarias
+    [HttpGet("concessionarias")]
+    public async Task<IActionResult> SearchConcessionarias([FromQuery] string? q)
+    {
+        q ??= string.Empty;
+        var list = await _db.Concessionarias
+            .AsNoTracking()
+            .Where(c =>
+                c.Nome.Contains(q) ||
+                c.Cidade.Contains(q) ||
+                c.Estado.Contains(q) ||
+                c.Endereco.Contains(q))
+            .OrderBy(c => c.Nome)
+            .Select(c => new { c.Id, c.Nome, c.Cidade, c.Estado })
+            .Take(30)
+            .ToListAsync();
+
+        return Ok(list);
+    }
+
+    #endregion
+
+    // GET: api/Vendas
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -31,116 +91,120 @@ public sealed class VendasController : ControllerBase
             .Select(v => new VendaListItemDto
             {
                 Id = v.Id,
-                Protocolo = v.ProtocoloVenda,
+                VeiculoId = v.VeiculoId,
+                ConcessionariaId = v.ConcessionariaId,
+                ClienteId = v.ClienteId,
                 DataVenda = v.DataVenda,
                 PrecoVenda = v.PrecoVenda,
-                VeiculoModelo = v.Veiculo.Modelo,
-                ConcessionariaNome = v.Concessionaria.Nome,
-                ClienteNome = v.Cliente.Nome,
-                ClienteCpf = v.Cliente.CPF
+                Protocolo = v.ProtocoloVenda
             })
             .ToListAsync();
 
         return Ok(dados);
     }
 
-    // GET: api/vendas/{id}
+    // GET: api/Vendas/{id}
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var v = await _db.Vendas
+        var venda = await _db.Vendas
             .Include(x => x.Veiculo)
             .Include(x => x.Concessionaria)
             .Include(x => x.Cliente)
             .FirstOrDefaultAsync(x => x.Id == id);
 
-        return v is null ? NotFound() : Ok(v);
+        return venda is null ? NotFound() : Ok(venda);
     }
 
-    // POST: api/vendas
+    // POST: api/Vendas
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] CreateVendaDto dto)
     {
-        // Concessionária por nome
+        // Concessionária (nome ou localização)
         var concessionaria = await _db.Concessionarias
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Nome == dto.ConcessionariaNomeOuLocalizacao);
+            .FirstOrDefaultAsync(x =>
+                x.Nome == dto.ConcessionariaNomeOuLocalizacao ||
+                x.Cidade == dto.ConcessionariaNomeOuLocalizacao ||
+                x.Estado == dto.ConcessionariaNomeOuLocalizacao ||
+                x.Endereco == dto.ConcessionariaNomeOuLocalizacao);
 
-        if (concessionaria is null) return BadRequest("Concessionária não encontrada.");
+        if (concessionaria is null)
+            return BadRequest("Concessionária não encontrada.");
 
-        // Fabricante por nome
+        // Fabricante
         var fabricante = await _db.Fabricantes
             .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.NomeFabricante == dto.FabricanteNomeOuModeloVeiculo);
+            .FirstOrDefaultAsync(x =>
+                x.NomeFabricante == dto.FabricanteNome);
 
-        if (fabricante is null) return BadRequest("Fabricante não encontrado.");
+        if (fabricante is null)
+            return BadRequest("Fabricante não encontrado.");
 
-        // Veículo por (FabricanteId, Modelo) -> retorna 1 por causa do índice único
+        // Veículo
         var veiculo = await _db.Veiculos
             .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.FabricanteId == fabricante.Id && v.Modelo == dto.FabricanteNomeOuModeloVeiculo);
+            .FirstOrDefaultAsync(x => x.FabricanteId == fabricante.Id && x.Modelo == dto.VeiculoModelo);
 
-        if (veiculo is null) return BadRequest("Veículo não encontrado para esse fabricante e modelo.");
+        if (veiculo is null) 
+            return BadRequest("Veículo não encontrado para esse fabricante e modelo.");
 
-        // Preço da venda
-        if (dto.PrecoVenda <= 0 || dto.PrecoVenda > veiculo.Preco)
-            return BadRequest("Preço da venda deve ser positivo e menor que o preço do veículo.");
-
-        // Cliente por CPF (cria ou atualiza)
+        // Cliente
         var cpf = Regex.Replace(dto.CpfCliente ?? "", @"\D", "");
-
-        if (cpf.Length != 11) return BadRequest("CPF inválido (11 dígitos).");
-
         var cliente = await _db.Clientes.FirstOrDefaultAsync(c => c.CPF == cpf);
 
         if (cliente is null)
-        {
-            cliente = Cliente.Create(dto.NomeCliente, cpf, dto.TelefoneCliente);
-            _db.Clientes.Add(cliente);
-        }
-
-        // Data da venda automática
-        var dataVendaUtc = DateTime.UtcNow;
+            return BadRequest("Cliente não encontrado.");
 
         // Protocolo
-        static string GerarProtocolo20() => $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..4]}".ToUpper();
+        string NovoProtocolo20() =>
+            $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}".Substring(0, 20).ToUpper();
 
         string protocolo;
-        do { protocolo = GerarProtocolo20(); }
-        while (await _db.Vendas.IgnoreQueryFilters().AnyAsync(v => v.ProtocoloVenda == protocolo));
 
-        // Criar venda 
+        do { protocolo = NovoProtocolo20(); }
+        while (await _db.Vendas.IgnoreQueryFilters().AnyAsync(x => x.ProtocoloVenda == protocolo));
+
+        // Venda
         var venda = Venda.Create(
             veiculo.Id,
             concessionaria.Id,
             cliente.Id,
-            dataVendaUtc,
+            dto.DataVenda.ToUniversalTime(),
             dto.PrecoVenda,
-            protocolo
-        );
+            protocolo);
 
         _db.Vendas.Add(venda);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = venda.Id },
-            new { venda.Id, venda.ProtocoloVenda, venda.DataVenda });
+        return CreatedAtAction(nameof(GetById), new { id = venda.Id }, new
+        {
+            venda.Id,
+            venda.VeiculoId,
+            venda.ConcessionariaId,
+            venda.ClienteId,
+            venda.DataVenda,
+            venda.PrecoVenda,
+            venda.ProtocoloVenda
+        });
     }
 
-    // DELETE: api/vendas/{id}
+    // DELETE: api/Vendas/{id}
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
-        var v = await _db.Vendas.FindAsync(id);
-        if (v is null) return NotFound();
+        var venda = await _db.Vendas.FindAsync(id);
 
-        v.Delete();
+        if (venda is null)
+            return NotFound();
+
+        venda.Delete();
         await _db.SaveChangesAsync();
+
         return NoContent();
     }
 
-    // GET: api/vendas/deleted
+    // GET: api/Vendas/deleted
     [HttpGet("deleted")]
     public async Task<IActionResult> GetDeleted()
     {
@@ -157,16 +221,23 @@ public sealed class VendasController : ControllerBase
         return Ok(itens);
     }
 
-    // POST: api/vendas/{id}/restore
+    // POST: api/Vendas/{id}/restore
     [HttpPost("{id:guid}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {
-        var v = await _db.Vendas.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
-        if (v is null) return NotFound();
-        if (!v.IsDeleted) return BadRequest("Item não está deletado.");
+        var venda = await _db.Vendas
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id);
 
-        v.Restore();
+        if (venda is null)
+            return NotFound();
+
+        if (!venda.IsDeleted)
+            return BadRequest("Item não está deletado.");
+
+        venda.Restore();
         await _db.SaveChangesAsync();
+
         return NoContent();
     }
 }

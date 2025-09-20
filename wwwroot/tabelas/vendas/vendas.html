@@ -6,12 +6,15 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container py-4">
-  <h1 class="mb-4">Lista de Vendas</h1>
-
-  <div class="d-flex gap-2 mb-3">
-    <button id="btnCarregar" class="btn btn-primary">Carregar Vendas</button>
-    <button id="btnDeletados" class="btn btn-secondary">Ver Vendas Deletadas</button>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="mb-0">Lista de Vendas</h1>
+    <div class="d-flex gap-2">
+      <button id="btnCarregar" class="btn btn-primary">Carregar Vendas</button>
+      <a class="btn btn-success" href="/tabelas/vendas/cadastro.html">Nova Venda</a>
+    </div>
   </div>
+
+  <div id="msg" class="small"></div>
 
   <table class="table table-bordered table-striped">
     <thead class="table-dark">
@@ -27,39 +30,96 @@
       </tr>
     </thead>
     <tbody id="tbody">
-      <tr><td colspan="8">Clique em "Carregar Vendas"</td></tr>
+      <tr><td colspan="8">Clique em "Carregar Vendas".</td></tr>
     </tbody>
   </table>
 
-  <script>
-    const tbody = document.getElementById('tbody');
-    document.getElementById('btnCarregar').addEventListener('click', async () => {
-      tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
-      try {
-        const r = await fetch('/api/vendas', { credentials: 'include' });
-        if (!r.ok) throw new Error('Falha ao buscar');
-        const data = await r.json();
-        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="8">Nenhuma venda.</td></tr>`; return; }
-        tbody.innerHTML = '';
-        for (const v of data) {
-          const dataPt = v.dataVenda ? new Date(v.dataVenda).toLocaleString() : '';
-          tbody.insertAdjacentHTML('beforeend', `
-            <tr>
-              <td>${v.id}</td>
-              <td>${v.protocolo ?? v.protocoloVenda ?? ''}</td>
-              <td>${dataPt}</td>
-              <td>${v.precoVenda ?? ''}</td>
-              <td>${v.veiculoModelo ?? v.veiculo?.modelo ?? ''}</td>
-              <td>${v.concessionariaNome ?? v.concessionaria?.nome ?? ''}</td>
-              <td>${v.clienteNome ?? v.cliente?.nome ?? ''}</td>
-              <td>${v.clienteCpf ?? v.cliente?.cpf ?? ''}</td>
-            </tr>`);
-        }
-      } catch(e){ tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro</td></tr>`; console.error(e); }
-    });
-    document.getElementById('btnDeletados').addEventListener('click', () => {
-      location.href = '/vendas/vendas-deletadas.html';
-    });
-  </script>
+<script src="/js/auth-guard.js"></script>
+<script>
+  requireAuth('Vendedor');
+
+  const tbody = document.getElementById('tbody');
+  const msg = document.getElementById('msg');
+  const showMsg = (t, c='danger') => { msg.className = `small text-${c}`; msg.textContent = t; };
+
+  // caches para evitar refetch
+  const cacheVeiculo = new Map();
+  const cacheConc    = new Map();
+  const cacheCli     = new Map();
+
+  async function getVeiculoModelo(id){
+    if (!id) return '';
+    if (cacheVeiculo.has(id)) return cacheVeiculo.get(id);
+    const r = await fetch(`/api/veiculos/${id}`, { credentials:'include' });
+    const v = r.ok ? await r.json() : null;
+    const modelo = v?.modelo ?? '';
+    cacheVeiculo.set(id, modelo);
+    return modelo;
+  }
+
+  async function getConcessionariaNome(id){
+    if (!id) return '';
+    if (cacheConc.has(id)) return cacheConc.get(id);
+    const r = await fetch(`/api/concessionarias/${id}`, { credentials:'include' });
+    const c = r.ok ? await r.json() : null;
+    const nome = c?.nome ?? '';
+    cacheConc.set(id, nome);
+    return nome;
+  }
+
+  async function getClienteInfo(id){
+    if (!id) return { nome:'', cpf:'' };
+    if (cacheCli.has(id)) return cacheCli.get(id);
+    const r = await fetch(`/api/clientes/${id}`, { credentials:'include' });
+    const c = r.ok ? await r.json() : null;
+    const info = { nome: c?.nome ?? '', cpf: c?.cpf ?? '' };
+    cacheCli.set(id, info);
+    return info;
+  }
+
+  document.getElementById('btnCarregar').addEventListener('click', async () => {
+    tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
+    msg.textContent = '';
+    try {
+      const r = await fetch('/api/vendas', { credentials: 'include' });
+      if (!r.ok) throw new Error('Falha ao buscar vendas');
+      const data = await r.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8">Nenhuma venda.</td></tr>`;
+        return;
+      }
+
+      const rows = await Promise.all(data.map(async v => {
+        const [modelo, concNome, cli] = await Promise.all([
+          v.veiculoModelo ?? (await getVeiculoModelo(v.veiculoId)),
+          v.concessionariaNome ?? (await getConcessionariaNome(v.concessionariaId)),
+          v.clienteNome ? { nome: v.clienteNome, cpf: v.clienteCpf ?? '' } : await getClienteInfo(v.clienteId)
+        ]);
+
+        const dataPt = v.dataVenda ? new Date(v.dataVenda).toLocaleString('pt-BR') : '';
+        const preco = Number(v.precoVenda ?? 0).toLocaleString('pt-BR',{ style:'currency', currency:'BRL' });
+
+        return `
+          <tr>
+            <td>${v.id}</td>
+            <td>${v.protocolo}</td>
+            <td>${dataPt}</td>
+            <td>${preco}</td>
+            <td>${modelo}</td>
+            <td>${concNome}</td>
+            <td>${cli.nome}</td>
+            <td>${cli.cpf}</td>
+          </tr>`;
+      }));
+
+      tbody.innerHTML = rows.join('');
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro ao carregar.</td></tr>`;
+      showMsg('Erro ao carregar vendas.');
+    }
+  });
+</script>
 </body>
 </html>

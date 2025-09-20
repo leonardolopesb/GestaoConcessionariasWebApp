@@ -1,7 +1,6 @@
 ﻿using GestaoConcessionariasWebApp.Models.Clientes;
 using GestaoConcessionariasWebApp.Models.Concessionarias;
 using GestaoConcessionariasWebApp.Models.Veiculos;
-using System.ComponentModel.DataAnnotations;
 
 namespace GestaoConcessionariasWebApp.Models.Vendas
 {
