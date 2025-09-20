@@ -7,49 +7,45 @@ public sealed class CreateVendaValidator : AbstractValidator<CreateVendaDto>
 {
     public CreateVendaValidator()
     {
-        // Concessionária
+        // Nome ou localização da concessionária
         RuleFor(x => x.ConcessionariaNomeOuLocalizacao)
             .NotEmpty()
             .WithMessage("Nome ou localização da concessionária é obrigatório.")
             .MaximumLength(255);
 
-        // Fabricante
+        // Nome do fabricante
         RuleFor(x => x.FabricanteNome)
             .NotEmpty()
             .WithMessage("Nome do fabricante é obrigatório.")
             .MaximumLength(100);
 
-        // Modelo
+        // Modelo do veículo
         RuleFor(x => x.VeiculoModelo)
             .NotEmpty()
             .WithMessage("Modelo do veículo é obrigatório.")
             .MaximumLength(100);
 
-        // Cliente
+        // Nome do cliente
         RuleFor(x => x.NomeCliente)
             .NotEmpty()
-            .WithMessage("Nome do cliente é obrigatório.")
+            .WithMessage("Nome completo do cliente é obrigatório.")
             .MaximumLength(100);
 
-        // CPF do cliente com valiidação
+        // CPF do cliente
         RuleFor(x => x.CpfCliente)
             .NotEmpty()
             .WithMessage("CPF é obrigatório.")
-            .Must(cpf =>
-            {
-                var digits = Regex.Replace(cpf ?? "", @"\D", "");
-                return digits.Length == 11;
-            })
-            .WithMessage("CPF inválido. Informe 11 dígitos.");
+            .Matches(@"^\d{11}$")
+            .WithMessage("CPF inválido. Deve conter somente números (sem hífen e sem ponto) e exatamente 11 dígitos.");
 
-        // Telefone do cliente com validação
+        // Telefone do cliente
         RuleFor(x => x.TelefoneCliente)
             .NotEmpty()
             .WithMessage("Telefone é obrigatório.")
-            .Matches(@"^[0-9()\-\s+]{8,20}$")
-            .WithMessage("Telefone inválido.");
+            .Matches(@"^[0-9()\-\s+]{8,15}$")
+            .WithMessage("Telefone inválido. Deve ter entre 8 e 15 caracteres.");
 
-        // Venda com validação de data futura
+        // Venda com validação para data não futura
         RuleFor(x => x.DataVenda)
             .Must(d => d <= DateTime.UtcNow.AddMinutes(1))
             .WithMessage("Data da venda não pode ser futura.");

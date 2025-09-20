@@ -2,7 +2,7 @@
 
 public enum AccessLevel
 {
-    Admin,
+    Admin = 1,
     Gerente,
     Vendedor
 }

@@ -6,6 +6,7 @@ using GestaoConcessionariasWebApp.Models.Veiculos;
 using GestaoConcessionariasWebApp.Models.Vendas;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace GestaoConcessionariasWebApp.Data
 {
@@ -25,17 +26,21 @@ namespace GestaoConcessionariasWebApp.Data
             // Configurações base
             base.OnModelCreating(builder);
 
-            // Configurações do Usuário
+            // Configurações do Usuário com valiidações
             builder.Entity<ApplicationUser>(e =>
             {
                 e.Property(u => u.NomeUsuario).HasMaxLength(50);
-                e.Property(u => u.AccessLevel).HasConversion<string>();
-                e.Property(u => u.Email).HasMaxLength(100);
                 e.Property(u => u.UserName).HasMaxLength(50);
+                e.Property(u => u.Email).HasMaxLength(100);
+                e.Property(u => u.PasswordHash).HasMaxLength(255);
+                e.Property(u => u.AccessLevel).HasConversion<string>();
 
                 e.HasQueryFilter(u => !u.IsDeleted);
             });
 
+            builder.Entity<ApplicationUser>()
+                .HasIndex(u => u.NomeUsuario)
+                .IsUnique();
 
             // Configurações do Fabricante
             builder.Entity<Fabricante>()
@@ -85,7 +90,7 @@ namespace GestaoConcessionariasWebApp.Data
             // Configurações do Veículo
             builder.Entity<Veiculo>()
                 .Property(v => v.Preco)
-                .HasColumnType("decimal(18,2)");
+                .HasColumnType("decimal(10,2)");
 
             builder.Entity<Veiculo>()
                 .HasQueryFilter(v => !v.IsDeleted);

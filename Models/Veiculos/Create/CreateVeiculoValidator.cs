@@ -14,11 +14,11 @@ namespace GestaoConcessionariasWebApp.Models.Veiculos.Create
 
             RuleFor(x => x.AnoFabricacao)
                 .InclusiveBetween(0, DateTime.UtcNow.Year)
-                .WithMessage($"O ano de fabricação deve ser menor do que o ano de {DateTime.UtcNow.Year}.");
+                .WithMessage($"O ano de fabricação deve ser menor do que o ano anual: {DateTime.UtcNow.Year}.");
 
             RuleFor(x => x.Preco)
                 .GreaterThan(0m)
-                .WithMessage("O preço deve ser maior que 0.");
+                .WithMessage("O preço deve ser um número maior do que zero.");
 
             RuleFor(x => x.FabricanteId)
                 .NotEmpty()

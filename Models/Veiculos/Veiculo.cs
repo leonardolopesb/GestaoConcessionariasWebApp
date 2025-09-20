@@ -1,5 +1,4 @@
 ﻿using GestaoConcessionariasWebApp.Models.Fabricantes;
-using System.ComponentModel.DataAnnotations;
 
 namespace GestaoConcessionariasWebApp.Models.Veiculos
 {
@@ -47,7 +46,7 @@ namespace GestaoConcessionariasWebApp.Models.Veiculos
         // Update
         public void Update (
             string modelo,
-            int anoFabricacao, 
+            int anoFabricacao,
             decimal preco,
             Guid fabricanteId, 
             TipoVeiculo tipoVeiculo,
