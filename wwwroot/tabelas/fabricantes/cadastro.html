@@ -21,7 +21,7 @@
                 <input id="pais" class="form-control" maxlength="50" placeholder="País de Origem" required>
             </div>
             <div class="col-md-6">
-                <input id="ano" type="number" class="form-control" placeholder="Ano de Fundação" min="1800" max="2100"
+                <input id="ano" type="number" class="form-control" placeholder="Ano de Fundação" min="1" max="2025"
                     required>
             </div>
         </div>
@@ -34,7 +34,11 @@
         </div>
     </form>
 
+    <script src="/js/auth-guard.js"></script>
     <script>
+        // somente o administrador pode acessar a página de cadastro
+        requireAuth('Admin');
+
         const frm = document.getElementById('frmFab');
         const nome = document.getElementById('nome');
         const pais = document.getElementById('pais');
@@ -68,8 +72,11 @@
 
             if (!vSite) return 'O Website é obrigatório.';
 
-            if (!reUrl.test(vSite) || vSite.length > 255)
-                return 'Website inválido. Use: https://...';
+            if (!reUrl.test(vSite))
+                return 'Website inválido. Use: https:// ou http://';
+
+            if (vSite.length > 255)
+                return 'Website deve possuir no máximo 255 caracteres.';
 
             return null;
         }
@@ -100,7 +107,13 @@
                     alert('Fabricante cadastrado com sucesso!');
                     // redireciona para a lista
                     location.href = '/tabelas/fabricantes/fabricantes.html';
-                } else {
+                }
+
+                else if (r.status === 409) {
+                    showMsg('Já existe um fabricante com esse nome.');
+                }
+
+                else {
                     const txt = await r.text();
                     showMsg('Erro ao salvar: ' + txt);
                 }

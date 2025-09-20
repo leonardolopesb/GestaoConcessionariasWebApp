@@ -43,6 +43,13 @@ public class FabricantesController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Post([FromBody] CreateFabricanteDto dto)
     {
+        var duplicado = await _db.Fabricantes
+            .IgnoreQueryFilters()
+            .AnyAsync(f => f.NomeFabricante == dto.NomeFabricante && !f.IsDeleted);
+
+        if (duplicado)
+            return Conflict("Já existe um fabricante com esse nome.");
+
         var fabricante = Fabricante.Create(
             dto.NomeFabricante,
             dto.PaisOrigem, 

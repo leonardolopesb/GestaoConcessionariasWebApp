@@ -38,7 +38,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -217,7 +217,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Modelo = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AnoFabricacao = table.Column<int>(type: "int", nullable: false),
-                    Preco = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Preco = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
                     FabricanteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TipoVeiculo = table.Column<int>(type: "int", nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -301,6 +301,12 @@ namespace GestaoConcessionariasWebApp.Migrations
                 name: "EmailIndex",
                 table: "AspNetUsers",
                 column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUsers_NomeUsuario",
+                table: "AspNetUsers",
+                column: "NomeUsuario",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",

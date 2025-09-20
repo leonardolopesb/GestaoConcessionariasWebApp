@@ -1,4 +1,3 @@
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using GestaoConcessionariasWebApp.Data;
 using GestaoConcessionariasWebApp.Models.Users;
