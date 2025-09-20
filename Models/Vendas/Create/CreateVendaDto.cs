@@ -1,6 +1,6 @@
 ﻿namespace GestaoConcessionariasWebApp.Models.Vendas.Create
 {
-    public sealed class CreateVendaDto
+    public class CreateVendaDto
     {
         // Concessionária: permitir busca por nome [que é único] ou localização
         public string ConcessionariaNomeOuLocalizacao { get; set; } = string.Empty;

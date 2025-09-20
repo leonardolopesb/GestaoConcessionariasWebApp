@@ -8,9 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\Errors\**" />
     <Compile Remove="wwwroot\html\**" />
+    <Content Remove="Models\Errors\**" />
     <Content Remove="wwwroot\html\**" />
+    <EmbeddedResource Remove="Models\Errors\**" />
     <EmbeddedResource Remove="wwwroot\html\**" />
+    <None Remove="Models\Errors\**" />
     <None Remove="wwwroot\html\**" />
   </ItemGroup>
 

@@ -48,6 +48,20 @@ namespace GestaoConcessionariasWebApp.Models.Vendas
             return new Venda(Guid.NewGuid(), veiculoId, concessionariaId, clienteId, data, preco, protocolo);
         }
 
+        public void Update(
+            Guid veiculoId,
+            Guid concessionariaId,
+            Guid clienteId,
+            DateTime data,
+            decimal preco)
+        {
+            VeiculoId = veiculoId;
+            ConcessionariaId = concessionariaId;
+            ClienteId = clienteId;
+            DataVenda = data;
+            PrecoVenda = preco;
+        }
+
         public void Delete() => IsDeleted = true;
         public void Restore() => IsDeleted = false;
     }

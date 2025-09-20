@@ -1,4 +1,5 @@
-﻿using GestaoConcessionariasWebApp.Models.Users;
+﻿using GestaoConcessionariasWebApp.Models.Fabricantes;
+using GestaoConcessionariasWebApp.Models.Users;
 using GestaoConcessionariasWebApp.Models.Users.Login;
 using GestaoConcessionariasWebApp.Models.Users.Update;
 using Microsoft.AspNetCore.Authorization;
@@ -13,18 +14,18 @@ namespace GestaoConcessionariasWebApp.Controllers;
 [Authorize(Roles = "Admin")]
 public class UsersController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userMgr;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public UsersController(UserManager<ApplicationUser> userMgr)
+    public UsersController(UserManager<ApplicationUser> userManager)
     {
-        _userMgr = userMgr;
+        _userManager = userManager;
     }
 
     // GET: api/users
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var users = await _userMgr.Users
+        var user = await _userManager.Users
             .Select(u => new {
                 u.Id, 
                 u.NomeUsuario,
@@ -33,42 +34,21 @@ public class UsersController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(users);
+        return Ok(user);
     }
 
     // GET: api/users/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
-        var u = await _userMgr.FindByIdAsync(id);
-        if (u == null) return NotFound();
+        var user = await _userManager.FindByIdAsync(id);
 
-        return Ok(new
-        {
-            u.Id,
-            u.NomeUsuario,
-            u.Email,
-            u.AccessLevel
+        return user is null ? NotFound() : Ok(new {
+            user.Id,
+            user.NomeUsuario,
+            user.Email,
+            user.AccessLevel
         });
-    }
-
-    // GET: api/users/deleted
-    [HttpGet("deleted")]
-    public async Task<IActionResult> GetDeleted()
-    {
-        var itens = await _userMgr.Users
-            .IgnoreQueryFilters()
-            .Where(u => u.IsDeleted)
-            .Select(u => new {
-                u.Id,
-                u.NomeUsuario,
-                u.Email,
-                u.AccessLevel,
-                u.IsDeleted
-            })
-            .ToListAsync();
-
-        return Ok(itens);
     }
 
     // POST: api/users
@@ -84,10 +64,12 @@ public class UsersController : ControllerBase
             AccessLevel = dto.AccessLevel
         };
 
-        var result = await _userMgr.CreateAsync(user, dto.Password);
-        if (!result.Succeeded) return BadRequest(result.Errors);
+        var result = await _userManager.CreateAsync(user, dto.Password);
 
-        await _userMgr.AddToRoleAsync(user, dto.AccessLevel.ToString());
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        await _userManager.AddToRoleAsync(user, dto.AccessLevel.ToString());
 
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, new
         {
@@ -98,39 +80,24 @@ public class UsersController : ControllerBase
         });
     }
 
-    // POST: api/users/{id}/restore
-    [HttpPost("{id}/restore")]
-    public async Task<IActionResult> Restore(string id)
-    {
-        var user = await _userMgr.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Id == id);
-
-        if (user == null) return NotFound();
-        if (!user.IsDeleted) return BadRequest("Usuário não está deletado.");
-
-        user.Restore();
-
-        var result = await _userMgr.UpdateAsync(user);
-        if (!result.Succeeded) return BadRequest(result.Errors);
-
-        return NoContent();
-    }
-
     // PUT: api/users/{id}
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateUserDto dto)
     {
-        var user = await _userMgr.FindByIdAsync(id);
-        if (user == null) return NotFound();
+        var user = await _userManager.FindByIdAsync(id);
+
+        if (user == null)
+            return NotFound();
 
         user.NomeUsuario = dto.NomeUsuario;
         user.UserName = dto.NomeUsuario;
         user.Email = dto.Email;
         user.AccessLevel = dto.AccessLevel;
 
-        var result = await _userMgr.UpdateAsync(user);
-        if (!result.Succeeded) return BadRequest(result.Errors);
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
 
         return Ok(
             new {
@@ -145,13 +112,61 @@ public class UsersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        var user = await _userMgr.Users.FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null) return NotFound();
+        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null)
+            return NotFound();
 
         user.Delete();
 
-        var result = await _userMgr.UpdateAsync(user);
-        if (!result.Succeeded) return BadRequest(result.Errors);
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+
+        return NoContent();
+    }
+
+    // GET: api/users/deleted
+    [HttpGet("deleted")]
+    public async Task<IActionResult> GetDeleted()
+    {
+        var itens = await _userManager.Users
+            .IgnoreQueryFilters()
+            .Where(u => u.IsDeleted)
+            .OrderBy(u => u.NomeUsuario)
+            .Select(u => new {
+                u.Id,
+                u.NomeUsuario,
+                u.Email,
+                u.AccessLevel,
+                u.IsDeleted
+            })
+            .ToListAsync();
+
+        return Ok(itens);
+    }
+
+    // POST: api/users/{id}/restore
+    [HttpPost("{id}/restore")]
+    public async Task<IActionResult> Restore(string id)
+    {
+        var user = await _userManager.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        if (user == null) 
+            return NotFound();
+
+        if (!user.IsDeleted) 
+            return BadRequest("Usuário não está deletado.");
+
+        user.Restore();
+
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded) 
+            return BadRequest(result.Errors);
 
         return NoContent();
     }

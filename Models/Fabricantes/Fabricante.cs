@@ -35,6 +35,18 @@ namespace GestaoConcessionariasWebApp.Models.Fabricantes
             return new Fabricante(Guid.NewGuid(), nomeFabricante, paisOrigem, anoFundacao, website);
         }
 
+        public void Update(
+            string nomeFabricante,
+            string paisOrigem,
+            int anoFundacao,
+            string website)
+        {
+            NomeFabricante = nomeFabricante;
+            PaisOrigem = paisOrigem;
+            AnoFundacao = anoFundacao;
+            Website = website;
+        }
+
         // Soft Delete (por segurança) + Restore
         public void Delete() => IsDeleted = true;
         public void Restore() => IsDeleted = false;

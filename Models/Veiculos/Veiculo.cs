@@ -44,6 +44,23 @@ namespace GestaoConcessionariasWebApp.Models.Veiculos
             return new Veiculo(Guid.NewGuid(), modelo, anoFabricacao, preco, fabricanteId, tipoVeiculo, descricao);
         }
 
+        // Update
+        public void Update (
+            string modelo,
+            int anoFabricacao, 
+            decimal preco,
+            Guid fabricanteId, 
+            TipoVeiculo tipoVeiculo,
+            string? descricao)
+        {
+            Modelo = modelo;
+            AnoFabricacao = anoFabricacao;
+            Preco = preco;
+            FabricanteId = fabricanteId;
+            TipoVeiculo = tipoVeiculo;
+            Descricao = descricao;
+        }
+
         public void Delete() => IsDeleted = true;
         public void Restore() => IsDeleted = false;
     }

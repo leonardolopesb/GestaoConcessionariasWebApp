@@ -3,6 +3,7 @@ using GestaoConcessionariasWebApp.Models.Clientes;
 using GestaoConcessionariasWebApp.Models.Vendas;
 using GestaoConcessionariasWebApp.Models.Vendas.Create;
 using GestaoConcessionariasWebApp.Models.Vendas.List;
+using GestaoConcessionariasWebApp.Models.Vendas.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,71 +19,11 @@ public sealed class VendasController : ControllerBase
     private readonly ApplicationDbContext _db;
     public VendasController(ApplicationDbContext db) => _db = db;
 
-    #region GETs opcionais que auxiliam a API de Vendas
-
-    // GET api/Vendas/fabricantes
-    [HttpGet("fabricantes")]
-    public async Task<IActionResult> SearchFabricantes([FromQuery] string? nome)
-    {
-        nome ??= string.Empty;
-        var list = await _db.Fabricantes
-            .AsNoTracking()
-            .Where(f => f.NomeFabricante.Contains(nome))
-            .OrderBy(f => f.NomeFabricante)
-            .Select(f => new { f.Id, f.NomeFabricante })
-            .Take(30)
-            .ToListAsync();
-
-        return Ok(list);
-    }
-
-    // GET api/Vendas/modelos
-    [HttpGet("modelos")]
-    public async Task<IActionResult> GetModelosByFabricante([FromQuery] string fabricanteNome)
-    {
-        if (string.IsNullOrWhiteSpace(fabricanteNome))
-            return BadRequest("Fabricante obrigatório.");
-
-        var fab = await _db.Fabricantes.AsNoTracking()
-            .FirstOrDefaultAsync(f => f.NomeFabricante == fabricanteNome);
-        if (fab is null) return NotFound("Fabricante não encontrado.");
-
-        var modelos = await _db.Veiculos.AsNoTracking()
-            .Where(v => v.FabricanteId == fab.Id)
-            .OrderBy(v => v.Modelo)
-            .Select(v => new { v.Id, v.Modelo, v.Preco })
-            .ToListAsync();
-
-        return Ok(modelos);
-    }
-
-    // GET api/Vendas/concessionarias
-    [HttpGet("concessionarias")]
-    public async Task<IActionResult> SearchConcessionarias([FromQuery] string? q)
-    {
-        q ??= string.Empty;
-        var list = await _db.Concessionarias
-            .AsNoTracking()
-            .Where(c =>
-                c.Nome.Contains(q) ||
-                c.Cidade.Contains(q) ||
-                c.Estado.Contains(q) ||
-                c.Endereco.Contains(q))
-            .OrderBy(c => c.Nome)
-            .Select(c => new { c.Id, c.Nome, c.Cidade, c.Estado })
-            .Take(30)
-            .ToListAsync();
-
-        return Ok(list);
-    }
-
-    #endregion
-
     // GET: api/Vendas
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var dados = await _db.Vendas
+        var venda = await _db.Vendas
             .AsNoTracking()
             .Include(v => v.Veiculo)
             .Include(v => v.Concessionaria)
@@ -100,7 +41,7 @@ public sealed class VendasController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(dados);
+        return Ok(venda);
     }
 
     // GET: api/Vendas/{id}
@@ -150,20 +91,25 @@ public sealed class VendasController : ControllerBase
             return BadRequest("Veículo não encontrado para esse fabricante e modelo.");
 
         // Cliente
-        var cpf = Regex.Replace(dto.CpfCliente ?? "", @"\D", "");
-        var cliente = await _db.Clientes.FirstOrDefaultAsync(c => c.CPF == cpf);
+        var cliente = await _db.Clientes
+            .FirstOrDefaultAsync(c => c.CPF == dto.CpfCliente);
 
         if (cliente is null)
             return BadRequest("Cliente não encontrado.");
 
         // Protocolo
-        string NovoProtocolo20() =>
+        string NovoProtocolo() =>
             $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}".Substring(0, 20).ToUpper();
 
         string protocolo;
 
-        do { protocolo = NovoProtocolo20(); }
-        while (await _db.Vendas.IgnoreQueryFilters().AnyAsync(x => x.ProtocoloVenda == protocolo));
+        do { 
+            protocolo = NovoProtocolo(); 
+        } while (
+            await _db.Vendas
+                .IgnoreQueryFilters()
+                .AnyAsync(x => x.ProtocoloVenda == protocolo)
+                );
 
         // Venda
         var venda = Venda.Create(
@@ -187,6 +133,27 @@ public sealed class VendasController : ControllerBase
             venda.PrecoVenda,
             venda.ProtocoloVenda
         });
+    }
+
+    // PUT: api/Vendas/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Put(Guid id, [FromBody] UpdateVendaDto dto)
+    {
+        var venda = await _db.Vendas.FindAsync(id);
+
+        if (venda is null)
+            return NotFound();
+
+        venda.Update(
+            dto.VeiculoId,
+            dto.ConcessionariaId,
+            dto.ClienteId,
+            dto.DataVenda.ToUniversalTime(),
+            dto.PrecoVenda
+        );
+
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     // DELETE: api/Vendas/{id}

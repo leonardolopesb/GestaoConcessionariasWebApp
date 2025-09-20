@@ -64,16 +64,19 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login(LoginDto dto)
     {
         ApplicationUser? user = await _user.FindByNameAsync(dto.NomeUsuario);
+
         if (user is null)
             return Unauthorized("Credenciais inválidas.");
 
         var isDeleted = await _user.Users
             .IgnoreQueryFilters()
             .AnyAsync(u => u.Id == user.Id && u.IsDeleted);
+
         if (isDeleted)
             return Unauthorized("Usuário desativado.");
 
         var res = await _signIn.PasswordSignInAsync(user, dto.Password, isPersistent: false, lockoutOnFailure: false);
+
         if (!res.Succeeded)
             return Unauthorized("Credenciais inválidas.");
 

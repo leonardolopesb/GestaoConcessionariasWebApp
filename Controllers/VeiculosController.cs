@@ -16,7 +16,7 @@ public class VeiculosController : ControllerBase
     private readonly ApplicationDbContext _db;
     public VeiculosController(ApplicationDbContext db) => _db = db;
 
-    // GET: api/veiculos
+    // GET: api/Veiculos
     [HttpGet]
     [Authorize(Roles = "Gerente,Vendedor")]
     public async Task<IActionResult> GetAll()
@@ -40,31 +40,35 @@ public class VeiculosController : ControllerBase
         return Ok(lista);
     }
 
-    // GET: api/veiculos/{id}
+    // GET: api/Veiculos/{id}
     [HttpGet("{id:guid}")]
     [Authorize(Roles = "Gerente,Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var v = await _db.Veiculos
+        var veiculo = await _db.Veiculos
             .Include(x => x.Fabricante)
             .FirstOrDefaultAsync(x => x.Id == id);
 
-        return v is null ? NotFound() : Ok(v);
+        return veiculo is null ? NotFound() : Ok(veiculo);
     }
 
-    // POST: api/veiculos
+    // POST: api/Veiculos
     [HttpPost]
     [Authorize(Roles = "Gerente")]
-    //[Authorize(Roles = $"{Roles.Admin},{Roles.Gerente}")]
     public async Task<IActionResult> Post([FromBody] CreateVeiculoDto dto)
     {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
         var existeFabricante = await _db.Fabricantes.AnyAsync(f => f.Id == dto.FabricanteId);
-        if (!existeFabricante) return BadRequest("Fabricante inválido.");
 
-        var veiculo = Veiculo.Create(dto.Modelo, dto.AnoFabricacao, dto.Preco,
-                                     dto.FabricanteId, dto.TipoVeiculo, dto.Descricao);
+        if (!existeFabricante)
+            return BadRequest("Fabricante inválido.");
+
+        var veiculo = Veiculo.Create(
+            dto.Modelo,
+            dto.AnoFabricacao,
+            dto.Preco,
+            dto.FabricanteId,
+            dto.TipoVeiculo,
+            dto.Descricao);
 
         _db.Veiculos.Add(veiculo);
         await _db.SaveChangesAsync();
@@ -72,38 +76,52 @@ public class VeiculosController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = veiculo.Id }, veiculo);
     }
 
-    // PUT: api/veiculos/{id}
+    // PUT: api/Veiculos/{id}
     [HttpPut("{id:guid}")]
-    //[Authorize(Roles = "Gerente")]
-    /*
+    [Authorize(Roles = "Gerente")]
+    
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateVeiculoDto dto)
     {
-        var v = await _db.Veiculos.FindAsync(id);
-        if (v is null) return NotFound();
+        var veiculo = await _db.Veiculos.FindAsync(id);
+
+        if (veiculo is null)
+            return NotFound();
 
         var existeFabricante = await _db.Fabricantes.AnyAsync(f => f.Id == dto.FabricanteId);
-        if (!existeFabricante) return BadRequest("Fabricante inválido.");
 
-        v.Update(dto.Modelo, dto.AnoFabricacao, dto.Preco, dto.FabricanteId, dto.TipoVeiculo, dto.Descricao);
+        if (!existeFabricante)
+            return BadRequest("Fabricante inválido.");
+
+        veiculo.Update(
+            dto.Modelo, 
+            dto.AnoFabricacao,
+            dto.Preco, 
+            dto.FabricanteId,
+            dto.TipoVeiculo,
+            dto.Descricao);
+
         await _db.SaveChangesAsync();
+
         return NoContent();
     }
-    */
 
-    // DELETE (soft): api/veiculos/{id}
+    // DELETE: api/Veiculos/{id}
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
-        var v = await _db.Veiculos.FindAsync(id);
-        if (v is null) return NotFound();
+        var veiculo = await _db.Veiculos.FindAsync(id);
 
-        v.Delete();
+        if (veiculo is null)
+            return NotFound();
+
+        veiculo.Delete();
         await _db.SaveChangesAsync();
+
         return NoContent();
     }
 
-    // GET: api/veiculos/deleted
+    // GET: api/Veiculos/deleted
     [HttpGet("deleted")]
     [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> GetDeleted()
@@ -119,19 +137,23 @@ public class VeiculosController : ControllerBase
         return Ok(itens);
     }
 
-    // POST: api/veiculos/{id}/restore
+    // POST: api/Veiculos/{id}/restore
     [HttpPost("{id:guid}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {
-        var v = await _db.Veiculos
+        var veiculo = await _db.Veiculos
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == id);
 
-        if (v is null) return NotFound();
-        if (!v.IsDeleted) return BadRequest("Item não está deletado.");
+        if (veiculo is null)
+            return NotFound();
 
-        v.Restore();
+        if (!veiculo.IsDeleted)
+            return BadRequest("Item não está deletado.");
+
+        veiculo.Restore();
         await _db.SaveChangesAsync();
+
         return NoContent();
     }
 }
