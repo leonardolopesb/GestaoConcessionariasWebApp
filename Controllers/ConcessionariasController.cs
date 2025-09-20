@@ -18,7 +18,7 @@ public class ConcessionariasController : ControllerBase
 
     // GET: api/Concessionarias
     [HttpGet]
-    [Authorize(Roles = "Admin,Vendedor")]
+    [Authorize(Roles = "Admin, Gerente, Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var lista = await _db.Concessionarias
@@ -30,7 +30,7 @@ public class ConcessionariasController : ControllerBase
 
     // GET: api/Concessionarias/{id}
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Vendedor")]
+    [Authorize(Roles = "Admin, Gerente, Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var concessionaria = await _db.Concessionarias.FindAsync(id);

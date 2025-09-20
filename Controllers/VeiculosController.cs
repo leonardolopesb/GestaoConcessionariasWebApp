@@ -18,7 +18,7 @@ public class VeiculosController : ControllerBase
 
     // GET: api/Veiculos
     [HttpGet]
-    [Authorize(Roles = "Gerente,Vendedor")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var lista = await _db.Veiculos
@@ -42,7 +42,7 @@ public class VeiculosController : ControllerBase
 
     // GET: api/Veiculos/{id}
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Gerente,Vendedor")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var veiculo = await _db.Veiculos

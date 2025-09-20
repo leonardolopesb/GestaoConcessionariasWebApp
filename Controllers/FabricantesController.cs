@@ -1,5 +1,4 @@
 ﻿using GestaoConcessionariasWebApp.Data;
-using GestaoConcessionariasWebApp.Models.Concessionarias;
 using GestaoConcessionariasWebApp.Models.Fabricantes;
 using GestaoConcessionariasWebApp.Models.Fabricantes.Create;
 using GestaoConcessionariasWebApp.Models.Fabricantes.Update;
@@ -19,7 +18,7 @@ public class FabricantesController : ControllerBase
 
     // GET: api/Fabricantes
     [HttpGet]
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "Admin, Gerente, Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var fabricantes = await _db.Fabricantes
@@ -31,7 +30,7 @@ public class FabricantesController : ControllerBase
 
     // GET: api/Fabricantes/{id}
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "Admin, Gerente, Vendedor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var fabricante = await _db.Fabricantes.FindAsync(id);

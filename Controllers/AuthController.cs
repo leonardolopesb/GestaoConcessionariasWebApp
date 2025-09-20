@@ -1,5 +1,6 @@
 ﻿using GestaoConcessionariasWebApp.Models.Users;
 using GestaoConcessionariasWebApp.Models.Users.Login;
+using GestaoConcessionariasWebApp.Models.Users.Register;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +35,7 @@ public class AuthController : ControllerBase
             return ValidationProblem(ModelState);
 
         if (!await _role.RoleExistsAsync(dto.AccessLevel.ToString()))
-            return BadRequest("Nível de acesso inválido.");
+            return BadRequest("Nível de acesso inválido. Apenas administradorem podem cadastrar novos usuários.");
 
         var user = new ApplicationUser
         {
@@ -45,8 +46,10 @@ public class AuthController : ControllerBase
             EmailConfirmed = true
         };
 
-        var res = await _user.CreateAsync(user, dto.Password);
-        if (!res.Succeeded) return BadRequest(res.Errors);
+        var success = await _user.CreateAsync(user, dto.Password);
+
+        if (!success.Succeeded)
+            return BadRequest(success.Errors);
 
         await _user.AddToRoleAsync(user, dto.AccessLevel.ToString());
 
@@ -75,9 +78,9 @@ public class AuthController : ControllerBase
         if (isDeleted)
             return Unauthorized("Usuário desativado.");
 
-        var res = await _signIn.PasswordSignInAsync(user, dto.Password, isPersistent: false, lockoutOnFailure: false);
+        var success = await _signIn.PasswordSignInAsync(user, dto.Password, isPersistent: false, lockoutOnFailure: false);
 
-        if (!res.Succeeded)
+        if (!success.Succeeded)
             return Unauthorized("Credenciais inválidas.");
 
         return Ok("Login realizado.");
@@ -96,7 +99,9 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Me()
     {
         var user = await _user.GetUserAsync(User);
-        if (user == null) return Unauthorized();
+
+        if (user == null)
+            return Unauthorized();
 
         return Ok(new
         {

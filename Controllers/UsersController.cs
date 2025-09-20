@@ -1,6 +1,6 @@
 ﻿using GestaoConcessionariasWebApp.Models.Fabricantes;
 using GestaoConcessionariasWebApp.Models.Users;
-using GestaoConcessionariasWebApp.Models.Users.Login;
+using GestaoConcessionariasWebApp.Models.Users.Register;
 using GestaoConcessionariasWebApp.Models.Users.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

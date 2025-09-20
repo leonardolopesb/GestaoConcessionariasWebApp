@@ -1,5 +1,4 @@
 ﻿using GestaoConcessionariasWebApp.Data;
-using GestaoConcessionariasWebApp.Models.Clientes;
 using GestaoConcessionariasWebApp.Models.Vendas;
 using GestaoConcessionariasWebApp.Models.Vendas.Create;
 using GestaoConcessionariasWebApp.Models.Vendas.List;
@@ -7,13 +6,12 @@ using GestaoConcessionariasWebApp.Models.Vendas.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 
 namespace GestaoConcessionariasWebApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Gerente, Vendedor")]
+[Authorize]
 public sealed class VendasController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -21,10 +19,15 @@ public sealed class VendasController : ControllerBase
 
     // GET: api/Vendas
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    [Authorize(Roles = "Gerente, Vendedor")]
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? start, [FromQuery] DateTime? end)
     {
-        var venda = await _db.Vendas
-            .AsNoTracking()
+        var query = _db.Vendas.AsNoTracking();
+
+        if (start.HasValue) query = query.Where(v => v.DataVenda >= start.Value);
+        if (end.HasValue) query = query.Where(v => v.DataVenda < end.Value);
+
+        var venda = await query
             .Include(v => v.Veiculo)
             .Include(v => v.Concessionaria)
             .Include(v => v.Cliente)
@@ -45,6 +48,7 @@ public sealed class VendasController : ControllerBase
     }
 
     // GET: api/Vendas/{id}
+    [Authorize(Roles = "Gerente, Vendedor")]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -58,6 +62,7 @@ public sealed class VendasController : ControllerBase
     }
 
     // POST: api/Vendas
+    [Authorize(Roles = "Vendedor")]
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] CreateVendaDto dto)
     {
@@ -137,6 +142,7 @@ public sealed class VendasController : ControllerBase
 
     // PUT: api/Vendas/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Vendedor")]
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateVendaDto dto)
     {
         var venda = await _db.Vendas.FindAsync(id);
@@ -158,6 +164,7 @@ public sealed class VendasController : ControllerBase
 
     // DELETE: api/Vendas/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
         var venda = await _db.Vendas.FindAsync(id);
@@ -173,6 +180,7 @@ public sealed class VendasController : ControllerBase
 
     // GET: api/Vendas/deleted
     [HttpGet("deleted")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> GetDeleted()
     {
         var itens = await _db.Vendas
@@ -190,6 +198,7 @@ public sealed class VendasController : ControllerBase
 
     // POST: api/Vendas/{id}/restore
     [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var venda = await _db.Vendas

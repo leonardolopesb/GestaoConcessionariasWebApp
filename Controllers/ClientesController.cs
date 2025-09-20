@@ -30,7 +30,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     // GET: api/Clientes/{id}
-    [Authorize(Roles = "Admin, Vendedor")]
+    [Authorize(Roles = "Admin, Gerente, Vendedor")]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -44,8 +44,7 @@ public sealed class ClientesController : ControllerBase
     [Authorize(Roles = "Admin, Vendedor")]
     public async Task<IActionResult> GetByCpf(string cpf)
     {
-        var cpfNum = Regex.Replace(cpf ?? "", @"\D", "");
-        var cliente = await _db.Clientes.FirstOrDefaultAsync(x => x.CPF == cpfNum);
+        var cliente = await _db.Clientes.FirstOrDefaultAsync(x => x.CPF == Regex.Replace(cpf ?? "", @"\D", ""));
 
         return cliente is null ? NotFound() : Ok(cliente);
     }
