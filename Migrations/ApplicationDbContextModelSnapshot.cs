@@ -48,7 +48,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     b.HasIndex("CPF")
                         .IsUnique();
 
-                    b.ToTable("Clientes");
+                    b.ToTable("Clientes", (string)null);
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Concessionarias.Concessionaria", b =>
@@ -96,7 +96,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     b.HasIndex("Nome")
                         .IsUnique();
 
-                    b.ToTable("Concessionarias");
+                    b.ToTable("Concessionarias", (string)null);
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Fabricantes.Fabricante", b =>
@@ -129,7 +129,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     b.HasIndex("NomeFabricante")
                         .IsUnique();
 
-                    b.ToTable("Fabricantes");
+                    b.ToTable("Fabricantes", (string)null);
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Users.ApplicationUser", b =>
@@ -245,7 +245,7 @@ namespace GestaoConcessionariasWebApp.Migrations
 
                     b.HasIndex("FabricanteId");
 
-                    b.ToTable("Veiculos");
+                    b.ToTable("Veiculos", (string)null);
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Vendas.Venda", b =>
@@ -288,7 +288,7 @@ namespace GestaoConcessionariasWebApp.Migrations
 
                     b.HasIndex("VeiculoId");
 
-                    b.ToTable("Vendas");
+                    b.ToTable("Vendas", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

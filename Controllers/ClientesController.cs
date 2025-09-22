@@ -19,7 +19,7 @@ public sealed class ClientesController : ControllerBase
 
     // GET: api/Clientes
     [HttpGet]
-    [Authorize(Roles = "Admin, Vendedor")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> GetAll()
     {
         var lista = await _db.Clientes
@@ -30,7 +30,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     // GET: api/Clientes/{id}
-    [Authorize(Roles = "Admin, Gerente, Vendedor")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -41,7 +41,7 @@ public sealed class ClientesController : ControllerBase
 
     // GET: api/Clientes/by-cpf/{cpf}   
     [HttpGet("by-cpf/{cpf}")]
-    [Authorize(Roles = "Admin, Vendedor")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> GetByCpf(string cpf)
     {
         var cliente = await _db.Clientes.FirstOrDefaultAsync(x => x.CPF == Regex.Replace(cpf ?? "", @"\D", ""));
@@ -51,7 +51,7 @@ public sealed class ClientesController : ControllerBase
 
     // POST: api/Clientes
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> Post([FromBody] CreateClienteDto dto)
     {
         var cpf = Regex.Replace(dto.CPF ?? "", @"\D", "");
@@ -65,7 +65,7 @@ public sealed class ClientesController : ControllerBase
 
     // PUT: api/Clientes/{id}
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteDto dto)
     {
         var cliente = await _db.Clientes.FindAsync(id);
@@ -85,7 +85,7 @@ public sealed class ClientesController : ControllerBase
 
     // DELETE: api/Clientes/{id}
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> SoftDelete(Guid id)
     {
         var cliente = await _db.Clientes.FindAsync(id);
@@ -101,7 +101,7 @@ public sealed class ClientesController : ControllerBase
 
     // GET: api/Clientes/deleted
     [HttpGet("deleted")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> GetDeleted()
     {
         var itens = await _db.Clientes
@@ -116,7 +116,7 @@ public sealed class ClientesController : ControllerBase
 
     // POST: api/Clientes/{id}/restore
     [HttpPost("{id:guid}/restore")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var cliente = await _db.Clientes
@@ -127,7 +127,7 @@ public sealed class ClientesController : ControllerBase
             return NotFound();
 
         if (!cliente.IsDeleted)
-            return BadRequest("Item não está deletado.");
+            return BadRequest("O cliente não está deletado.");
 
         cliente.Restore();
         await _db.SaveChangesAsync();

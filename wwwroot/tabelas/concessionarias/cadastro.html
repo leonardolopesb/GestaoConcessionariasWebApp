@@ -18,10 +18,10 @@
 
         <div class="row g-2">
             <div class="col-md-4">
-                <input id="cep" class="form-control" placeholder="CEP (00000-000)" minlength="8" maxlength="9" required>
+                <input id="cep" class="form-control" placeholder="CEP (00000-000)" minlength="8" maxlength="10" required>
             </div>
             <div class="col-md-4">
-                <input id="estado" class="form-control" placeholder="Estado (UF)" maxlength="50" required>
+                <input id="estado" class="form-control" placeholder="Estado" maxlength="50" required>
             </div>
             <div class="col-md-4">
                 <input id="cidade" class="form-control" placeholder="Cidade" maxlength="50" required>
@@ -30,20 +30,19 @@
 
         <div class="row g-2">
             <div class="col-md-8">
-                <input id="endereco" class="form-control" placeholder="Endereço (Rua, Av., etc.)" maxlength="255"
-                    required>
+                <input id="endereco" type="text" class="form-control" placeholder="Rua, Avenida, etc" maxlength="255" required>
             </div>
             <div class="col-md-4">
-                <input id="addressNumber" class="form-control" placeholder="Número do Endereço" maxlength="20">
+                <input id="addressNumber" type="number" min="1" class="form-control" placeholder="Número do endereço" maxlength="4" required>
             </div>
         </div>
 
         <div class="row g-2">
             <div class="col-md-6">
-                <input id="telefone" class="form-control" placeholder="Telefone" maxlength="20">
+                <input id="telefone" class="form-control" placeholder="Telefone" minlength="8" maxlength="15" required>
             </div>
             <div class="col-md-6">
-                <input id="email" class="form-control" type="email" placeholder="E-mail" maxlength="100">
+                <input id="email" class="form-control" type="email" placeholder="E-mail" maxlength="100" required>
             </div>
         </div>
 
@@ -56,9 +55,14 @@
         </div>
     </form>
 
+    <script src="/js/auth-guard.js"></script>
+
     <script>
+        // somente o administrador pode acessar a página de cadastro
+        requireAuth('Admin');
+
         const reCep8 = /^\d{8}$/;
-        const reTelefone = /^[0-9()\-\s+]{8,20}$/;
+        const reTelefone = /^[0-9()\-\s+]{8,15}$/;
         const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const max = { nome: 100, estado: 50, cidade: 50, endereco: 255 };
 
@@ -94,18 +98,29 @@
             const raw = cep.value.trim();
             cepValidoViaCEP = false;
 
-            if (!reCep8.test(raw)) { showMsg('CEP inválido (8 dígitos).'); return; }
+            if (!reCep8.test(raw)) {
+                showMsg('CEP inválido (8 dígitos).');
+                return;
+            }
 
             try {
                 const r = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+
                 const data = await r.json();
-                if (data.erro) { showMsg('CEP não encontrado.'); return; }
+                if (data.erro){
+                    showMsg('CEP não encontrado.');
+                    return;
+                }
 
                 // Preenche automaticamente
                 estado.value = data.uf || '';
                 cidade.value = data.localidade || '';
+                endereco.value = data.logradouro || '';
+
                 const partes = [data.logradouro, data.bairro, data.complemento].filter(Boolean);
-                if (!endereco.value) endereco.value = partes.join(', ');
+
+                if (!endereco.value)
+                    endereco.value = partes.join(', ');
 
                 clearMsg();
                 cepValidoViaCEP = true;
@@ -116,15 +131,15 @@
 
         function validateForm() {
             const v = {
-                nome: nome.value.trim(),
-                cep: cep.value.trim(),
-                estado: estado.value.trim(),
-                cidade: cidade.value.trim(),
-                endereco: endereco.value.trim(),
-                addressNumber: addressNumber.value.trim(),
-                telefone: telefone.value.trim(),
-                email: email.value.trim(),
-                capacidade: capacidade.value.trim()
+                nome: nome.value,
+                cep: cep.value,
+                estado: estado.value,
+                cidade: cidade.value,
+                endereco: endereco.value,
+                addressNumber: addressNumber.value,
+                telefone: telefone.value,
+                email: email.value,
+                capacidade: capacidade.value
             };
 
             // obrigatoriedade
@@ -133,7 +148,7 @@
             if (!v.estado) return 'O Estado é obrigatório.';
             if (!v.cidade) return 'A Cidade é obrigatória.';
             if (!v.endereco) return 'O Endereço é obrigatório.';
-            if (!v.addressNumber) return 'O Número do Endereço é obrigatório.';
+            if (!v.addressNumber) return 'O Número do endereço é obrigatório.';
             if (!v.telefone) return 'O Telefone é obrigatório.';
             if (!v.email) return 'O E-mail é obrigatório.';
             if (!v.capacidade) return 'A Capacidade é obrigatória.';
@@ -143,10 +158,10 @@
             if (v.estado.length > max.estado) return `Estado: máximo ${max.estado} caracteres.`;
             if (v.cidade.length > max.cidade) return `Cidade: máximo ${max.cidade} caracteres.`;
             if (v.endereco.length > max.endereco) return `Endereço: máximo ${max.endereco} caracteres.`;
+            if (v.endereco < 0) return `O número do endereço precisa ser um valor positivo.`;
 
-            // formatos
-            if (!reCep8.test(v.cep)) return 'CEP inválido. Deve ter 8 dígitos.';
-            if (!reTelefone.test(v.telefone)) return 'Telefone inválido. É necessário ter entre 8 e 20 dígitos.';
+            // formatando valores
+            if (!reTelefone.test(v.telefone)) return 'Telefone inválido. Digite somente números.';
             if (!reEmail.test(v.email)) return 'E-mail inválido. Formato incorreto.';
 
             // capacidade numérica
@@ -172,7 +187,7 @@
                 cep: cep.value.replace(/\D/g, ''),
                 estado: estado.value.trim(),
                 cidade: cidade.value.trim(),
-                endereco: `${endereco.value.trim()}. nº ${addressNumber.value.trim()}`,
+                endereco: `${endereco.value.trim()}, nº ${addressNumber.value.trim()}`,
                 telefone: telefone.value.trim(),
                 email: email.value.trim(),
                 capacidadeMaximaVeiculos: Number(capacidade.value.trim())

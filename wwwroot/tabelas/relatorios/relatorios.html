@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Mensal de Vendas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+
+<body class="container py-4">
+    <h1 class="mb-4">Relatório Mensal de Vendas</h1>
+
+    <div id="msg" class="small"></div>
+
+    <form id="frmFiltro" class="row g-2 align-items-end mb-3">
+        <div class="col-sm-4">
+            <label class="form-label">Mês/Ano</label>
+            <input id="mesAno" type="month" class="form-control" required>
+        </div>
+        <div class="col-sm-8 d-flex gap-2">
+            <button class="btn btn-primary">Gerar</button>
+            <button type="button" id="btnCsv" class="btn btn-outline-secondary">Exportar CSV</button>
+        </div>
+    </form>
+
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-muted">Total de vendas</div>
+                <div id="kpiQtd" class="fs-4">-</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-muted">Valor total</div>
+                <div id="kpiValor" class="fs-4">-</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-muted">Ticket médio</div>
+                <div id="kpiTicket" class="fs-4">-</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-muted">Período</div>
+                <div id="kpiPeriodo" class="fs-4">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <h2 class="h6">Vendas por tipo de veículo</h2>
+            <div style="max-width:400px; margin:0 auto;">
+                <canvas id="chartTipo"></canvas>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <h2 class="h6">Vendas por fabricante</h2>
+            <div style="max-width:400px; margin:0 auto;">
+                <canvas id="chartFab"></canvas>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <h2 class="h6">Desempenho por concessionária</h2>
+            <div style="max-width:400px; margin:0 auto;">
+                <canvas id="chartConc"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de base (para exportações) -->
+    <section class="mb-4">
+        <h2 class="h5">Vendas do período</h2>
+        <div class="table-responsive">
+            <table class="table table-striped" id="tblBase">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Protocolo</th>
+                        <th>Data</th>
+                        <th>Preço</th>
+                        <th>Veículo</th>
+                        <th>Tipo</th>
+                        <th>Fabricante</th>
+                        <th>Concessionária</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <script src="/js/auth-guard.js"></script>
+    <script>
+        // exige login como Gerente
+        requireAuth('Gerente');
+
+        const msg = document.getElementById('msg');
+        const show = (t, cls = 'danger') => { msg.className = 'alert alert-' + cls; msg.textContent = t; };
+        const clear = () => { msg.className = ''; msg.textContent = ''; };
+
+        // refs
+        const frm = document.getElementById('frmFiltro');
+        const mesAno = document.getElementById('mesAno');
+        const kpiQtd = document.getElementById('kpiQtd');
+        const kpiValor = document.getElementById('kpiValor');
+        const kpiTicket = document.getElementById('kpiTicket');
+        const kpiPeriodo = document.getElementById('kpiPeriodo');
+        const tbody = document.querySelector('#tblBase tbody');
+
+        let chTipo, chFab, chConc;
+
+        // mês atual
+        (function initMonth() {
+            const d = new Date();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            mesAno.value = `${d.getFullYear()}-${m}`;
+        })();
+
+        frm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clear();
+
+            const [y, m] = mesAno.value.split('-').map(Number);
+            if (!y || !m) { show('Selecione mês/ano.', 'warning'); return; }
+
+            const start = new Date(Date.UTC(y, m - 1, 1));
+            const end = new Date(Date.UTC(y, m, 1));
+            kpiPeriodo.textContent = `${String(m).padStart(2, '0')}/${y}`;
+
+            try {
+                const [rv, rveic, rfab, rconc] = await Promise.all([
+                    fetch(`/api/vendas?start=${start.toISOString()}&end=${end.toISOString()}`, { credentials: 'include' }),
+                    fetch('/api/veiculos', { credentials: 'include' }),
+                    fetch('/api/fabricantes', { credentials: 'include' }),
+                    fetch('/api/concessionarias', { credentials: 'include' })
+                ]);
+                if (!rv.ok) throw new Error('Falha ao carregar vendas');
+                if (!rveic.ok || !rfab.ok || !rconc.ok) throw new Error('Falha ao carregar catálogos');
+
+                const vendas = await rv.json();
+                const veiculos = await rveic.json();
+                const fabs = await rfab.json();
+                const concs = await rconc.json();
+
+                // lookups
+                const vById = new Map(veiculos.map(v => [v.id, v]));
+                const fById = new Map(fabs.map(f => [f.id, f]));
+                const cById = new Map(concs.map(c => [c.id, c]));
+
+                // KPIs
+                const qtd = vendas.length;
+                const total = vendas.reduce((s, v) => s + Number(v.precoVenda || 0), 0);
+                kpiQtd.textContent = qtd.toString();
+                kpiValor.textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                kpiTicket.textContent = (qtd ? total / qtd : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                // tabela base
+                tbody.innerHTML = '';
+                for (const vd of vendas) {
+                    const veic = vById.get(vd.veiculoId);
+                    const fab = veic ? fById.get(veic.fabricanteId) : null;
+                    const conc = cById.get(vd.concessionariaId);
+
+                    tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${vd.protocolo ?? vd.protocoloVenda ?? ''}</td>
+              <td>${vd.dataVenda ? new Date(vd.dataVenda).toLocaleString('pt-BR') : ''}</td>
+              <td>${Number(vd.precoVenda || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+              <td>${veic?.modelo ?? ''}</td>
+              <td>${veic?.tipoVeiculo ?? ''}</td>
+              <td>${fab?.nomeFabricante ?? ''}</td>
+              <td>${conc?.nome ?? ''}</td>
+            </tr>
+          `);
+                }
+
+                const porTipo = new Map();
+                const porFab = new Map();
+                const porConc = new Map();
+
+                for (const vd of vendas) {
+                    const veic = vById.get(vd.veiculoId);
+                    const tipo = veic?.tipoVeiculo ?? '—';
+                    const fab = veic ? (fById.get(veic.fabricanteId)?.nomeFabricante ?? '—') : '—';
+                    const conc = cById.get(vd.concessionariaId)?.nome ?? '—';
+                    const val = Number(vd.precoVenda || 0);
+
+                    porTipo.set(tipo, { qtd: (porTipo.get(tipo)?.qtd || 0) + 1, val: (porTipo.get(tipo)?.val || 0) + val });
+                    porFab.set(fab, { qtd: (porFab.get(fab)?.qtd || 0) + 1, val: (porFab.get(fab)?.val || 0) + val });
+                    porConc.set(conc, { qtd: (porConc.get(conc)?.qtd || 0) + 1, val: (porConc.get(conc)?.val || 0) + val });
+                }
+
+                drawBar('chartTipo', porTipo, v => `${v.qtd}`);
+                drawBar('chartFab', porFab, v => `${v.qtd}`);
+                drawBar('chartConc', porConc, v => `${v.qtd}`);
+
+            } catch (err) {
+                console.error(err);
+                show(err.message || 'Erro ao gerar relatório.');
+            }
+        });
+
+        function drawBar(canvasId, map, valueSel) {
+            const labels = Array.from(map.keys());
+            const values = Array.from(map.values()).map(valueSel);
+
+            const ctx = document.getElementById(canvasId);
+            const old = Chart.getChart(ctx); if (old) old.destroy();
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Qtd', data: values }] },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // Exportar CSV
+        document.getElementById('btnCsv').addEventListener('click', () => {
+            const rows = [['Protocolo', 'Data', 'Preço', 'Veículo', 'Tipo', 'Fabricante', 'Concessionária']];
+            document.querySelectorAll('#tblBase tbody tr').forEach(tr => {
+                rows.push(Array.from(tr.children).map(td => td.textContent.replace(/\s+/g, ' ').trim()));
+            });
+            const csv = rows.map(r => r.map(x => `"${x.replace(/"/g, '""')}"`).join(';')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `relatorio-vendas-${mesAno.value}.csv`;
+            a.click();
+        });
+    </script>
+</body>
+
+</html>

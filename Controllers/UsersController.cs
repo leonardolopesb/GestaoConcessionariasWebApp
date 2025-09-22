@@ -55,6 +55,14 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] RegisterDto dto)
     {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+        if (await _userManager.FindByNameAsync(dto.NomeUsuario) is not null)
+            return Conflict("Já existe um usuário com este nome de usuário.");
+
+        if (await _userManager.FindByEmailAsync(dto.Email) is not null)
+            return Conflict("Já existe um usuário com este e-mail.");
+
         var user = new ApplicationUser
         {
             UserName = dto.NomeUsuario,

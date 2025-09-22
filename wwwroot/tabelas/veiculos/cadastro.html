@@ -14,15 +14,15 @@
     <div class="row g-2">
       <div class="col-md-6">
         <label class="form-label">Modelo</label>
-        <input id="modelo" class="form-control" maxlength="100" placeholder="Ex.: Civic" required>
+        <input id="modelo" class="form-control" maxlength="100" placeholder="Digite o modelo do veículo" required>
       </div>
       <div class="col-md-3">
         <label class="form-label">Ano de Fabricação</label>
-        <input id="ano" type="number" class="form-control" min="1900" max="2100" placeholder="Ex.: 2021" required>
+        <input id="ano" type="number" class="form-control" max="2025" placeholder="Ex.: 2025" required>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Preço (R$)</label>
-        <input id="preco" type="number" step="0.01" min="0.01" class="form-control" placeholder="Ex.: 95000.00" required>
+        <label class="form-label">Preço</label>
+        <input id="preco" type="number" step="0.01" min="0.01" class="form-control" placeholder="R$" required>
       </div>
     </div>
 
@@ -33,6 +33,7 @@
           <option value="">Carregando fabricantes...</option>
         </select>
       </div>
+
       <div class="col-md-6">
         <label class="form-label">Tipo de Veículo</label>
         <select id="tipoVeiculo" class="form-select" required>
@@ -104,20 +105,21 @@
     })();
 
     function validate(){
-      const vModelo = modelo.value.trim();
+      const vModelo = modelo.value;
       const vAno = Number(ano.value);
       const vPreco = Number(preco.value);
       const vFab = fabricanteId.value;
       const vTipo = tipoVeiculo.value;
-      const vDesc = descricao.value.trim();
+      const vDesc = descricao.value;
 
       if(!vModelo) return 'O modelo é obrigatório.';
       if(vModelo.length > 100) return 'Modelo: máximo 100 caracteres.';
 
-      if(!Number.isInteger(vAno) || vAno < 1900 || vAno > currentYear)
-        return `Ano de fabricação deve estar entre 1900 e ${currentYear}.`;
+      if(!Number.isInteger(vAno) || vAno > currentYear)
+        return `Ano de fabricação deve ser menor que o ano atual: ${currentYear}.`;
 
-      if(!(vPreco > 0)) return 'O preço deve ser maior que 0.';
+      if(!(vPreco > 0)) return 'O preço deve ser maior que 0 reais.';
+      if (!(vPreco < 100000000)) return 'O preço deve ser menor do que 100 milhões de reais.'
 
       if(!vFab) return 'Selecione um fabricante.';
       if(!vTipo && vTipo !== 0) return 'Selecione o tipo de veículo.';
@@ -135,12 +137,12 @@
       if(err){ showMsg(err); return; }
 
       const body = {
-        modelo: modelo.value.trim(),
+        modelo: modelo.value,
         anoFabricacao: Number(ano.value),
         preco: Number(preco.value),
         fabricanteId: fabricanteId.value,
         tipoVeiculo: Number(tipoVeiculo.value),
-        descricao: descricao.value.trim() || null
+        descricao: descricao.value || null
       };
 
       try{

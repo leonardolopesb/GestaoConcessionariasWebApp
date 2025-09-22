@@ -18,7 +18,9 @@ namespace GestaoConcessionariasWebApp.Models.Veiculos.Create
 
             RuleFor(x => x.Preco)
                 .GreaterThan(0m)
-                .WithMessage("O preço deve ser um número maior do que zero.");
+                .WithMessage("O preço deve ser um número maior do que zero.")
+                .LessThan(100_000_000m)
+                .WithMessage("O preço deve ser menor a 100 milhões."); ;
 
             RuleFor(x => x.FabricanteId)
                 .NotEmpty()

@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Nova Venda</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .hint { font-size:.875rem; color:#6c757d }
-  </style>
+  <link href="/css/site.css" rel="stylesheet">
 </head>
-<body class="container py-4" style="max-width:900px">
+
+<body class="container py-4">
   <h1 class="mb-4">Nova Venda</h1>
-  <div id="msg"></div>
+  <div id="msg" class="mb-3"></div>
 
   <form id="frmVenda" class="vstack gap-4">
 
@@ -20,7 +19,7 @@
 
       <div class="row g-2">
         <div class="col-md-6">
-          <label class="form-label">Fabricante (por nome)</label>
+          <label class="form-label">Nome do Fabricante</label>
           <select id="fabricante" class="form-select" required>
             <option value="">Carregando...</option>
           </select>
@@ -31,40 +30,73 @@
           <select id="modelo" class="form-select" disabled required>
             <option value="">Selecione um fabricante</option>
           </select>
+
           <div id="precoBase" class="hint mt-1"></div>
         </div>
       </div>
+
     </section>
 
     <!-- Concessionária -->
     <section class="card p-3">
       <h2 class="h5 mb-3">Concessionária</h2>
-      <label class="form-label">Nome (valor único)</label>
+
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <span class="fw-semibold">Listar por:</span>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="critConc" id="critNome" value="nome" checked>
+          <label class="form-check-label" for="critNome">Nome</label>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="critConc" id="critLoc" value="local">
+          <label class="form-check-label" for="critLoc">Localização</label>
+        </div>
+
+      </div>
+
       <select id="concessionaria" class="form-select" required>
         <option value="">Carregando...</option>
       </select>
+
       <div id="concHint" class="hint mt-1"></div>
     </section>
 
     <!-- Cliente -->
     <section class="card p-3">
       <h2 class="h5 mb-3">Dados do Cliente</h2>
+
       <div class="row g-2">
-        <div class="col-md-4"><input id="cpf" class="form-control" placeholder="CPF (11 dígitos)" maxlength="11" required></div>
-        <div class="col-md-4"><input id="nome" class="form-control" placeholder="Nome" maxlength="100" required></div>
-        <div class="col-md-4"><input id="tel"  class="form-control" placeholder="Telefone" maxlength="20" required></div>
+        <div class="col-md-4">
+          <input id="cpf" class="form-control" placeholder="CPF (11 dígitos)" minlength="11" maxlength="11" required>
+        </div>
+
+        <div class="col-md-4">
+          <input id="nome" class="form-control" placeholder="Nome" maxlength="100" required>
+        </div>
+
+        <div class="col-md-4">
+          <input id="tel" class="form-control" placeholder="Telefone" minlength="8" maxlength="15" required>
+        </div>
       </div>
+
       <div id="cliHint" class="hint mt-1"></div>
     </section>
 
     <!-- Venda -->
     <section class="card p-3">
       <h2 class="h5 mb-3">Dados da Venda</h2>
+
       <div class="row g-2">
-        <div class="col-md-6"><input id="data" type="datetime-local" class="form-control" required></div>
-        <div class="col-md-6"><input id="preco" type="number" step="0.01" class="form-control" placeholder="Preço de venda (R$)" required></div>
+        <div class="col-md-6">
+          <input id="data" type="datetime-local" class="form-control" required>
+        </div>
+
+        <div class="col-md-6">
+          <input id="preco" type="number" step="0.01" min="0.01" class="form-control" placeholder="Preço de venda (R$)" required>
+        </div>
+
       </div>
-      <div id="precoHint" class="hint mt-1"></div>
     </section>
 
     <div class="d-flex gap-2">
@@ -75,35 +107,40 @@
 
   <script src="/js/auth-guard.js"></script>
   <script>
-    // exige login como Vendedor
-    try { requireAuth('Vendedor'); } catch {}
+    requireAuth('Vendedor', 'Gerente');
 
-    const msg = document.getElementById('msg');
+    // helpers
+    const qs = s => document.querySelector(s);
+    const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    const onlyDigits = s => (s||'').replace(/\D/g,'');
     const showMsg = (t, type='danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
     const clearMsg = () => { msg.className = ''; msg.textContent = ''; };
 
-    // elementos
-    const fabricante = document.getElementById('fabricante');
-    const modelo = document.getElementById('modelo');
-    const precoBase = document.getElementById('precoBase');
-    const concessionaria = document.getElementById('concessionaria');
-    const concHint = document.getElementById('concHint');
+    // ---------- elementos ----------
+    const msg = qs('#msg');
 
-    const cpf = document.getElementById('cpf');
-    const nome = document.getElementById('nome');
-    const tel  = document.getElementById('tel');
-    const cliHint = document.getElementById('cliHint');
+    const fabricanteSel   = qs('#fabricante');
+    const modeloSel       = qs('#modelo');
+    const precoBaseHint   = qs('#precoBase');
 
-    const data = document.getElementById('data');
-    const preco = document.getElementById('preco');
-    const precoHint = document.getElementById('precoHint');
+    const concSel         = qs('#concessionaria');
+    const concHint        = qs('#concHint');
+    const critRadios      = document.getElementsByName('critConc');
 
-    // caches
+    const cpfInp          = qs('#cpf');
+    const nomeInp         = qs('#nome');
+    const telInp          = qs('#tel');
+    const cliHint         = qs('#cliHint');
+
+    const dataInp         = qs('#data');
+    const precoInp        = qs('#preco');
+
+    // cache
     let fabricantes = [];
     let veiculos = [];
     let concessionarias = [];
 
-    // boot: carrega listas e seta data atual
+    // requisições api
     (async function boot(){
       try {
         const [rf, rv, rc] = await Promise.all([
@@ -111,146 +148,153 @@
           fetch('/api/veiculos',        { credentials:'include' }),
           fetch('/api/concessionarias', { credentials:'include' })
         ]);
-        if (!rf.ok || !rv.ok || !rc.ok) throw new Error('Falha ao carregar dados');
+        if(!rf.ok || !rv.ok || !rc.ok) throw new Error('Falha ao carregar dados iniciais');
 
         fabricantes   = await rf.json();
         veiculos      = await rv.json();
         concessionarias = await rc.json();
 
         // fabricantes
-        fabricante.innerHTML = '<option value="">Selecione</option>';
-        for (const f of fabricantes) {
-          const opt = document.createElement('option');
-          opt.value = f.id; opt.textContent = f.nomeFabricante;
-          fabricante.appendChild(opt);
-        }
+        fabricanteSel.innerHTML = '<option value="">Selecione</option>';
+        fabricantes.forEach(f => fabricanteSel.insertAdjacentHTML(
+          'beforeend', `<option value="${f.id}">${f.nomeFabricante}</option>`));
 
-        // concessionárias
-        concessionaria.innerHTML = '<option value="">Selecione</option>';
-        for (const c of concessionarias) {
-          const opt = document.createElement('option');
-          opt.value = c.id; opt.textContent = c.nome;
-          concessionaria.appendChild(opt);
-        }
+        // concessionárias (critério inicial: nome)
+        renderConcessionarias('nome');
 
-        // data agora (no fuso local)
+        // data atual local
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        data.value = now.toISOString().slice(0,16);
-      } catch(e){
+        dataInp.value = now.toISOString().slice(0,16);
+      } catch (e) {
         console.error(e);
         showMsg('Erro ao carregar dados iniciais.');
       }
     })();
 
-    // ao escolher fabricante ➜ popula modelos
-    fabricante.addEventListener('change', () => {
-      precoBase.textContent = '';
-      precoHint.textContent = '';
-      modelo.innerHTML = '<option value="">Selecione o modelo</option>';
-      modelo.disabled = true;
+    // ---------- Concessionárias ----------
+    function renderConcessionarias(criterio){
+      concSel.innerHTML = '<option value="">Selecione...</option>';
+      concessionarias.forEach(c => {
+        const label = criterio === 'nome'
+          ? c.nome : `${c.endereco}, ${c.cidade}, ${c.estado} `;
+        concSel.insertAdjacentHTML('beforeend', `<option value="${c.id}">${label}</option>`);
+      });
+      concHint.textContent = `${concessionarias.length} resultado(s).`;
+    }
 
-      const id = fabricante.value;
-      if (!id) return;
+    Array.from(critRadios).forEach(r =>
+      r.addEventListener('change', e => renderConcessionarias(e.target.value === 'local' ? 'local' : 'nome'))
+    );
 
-      const modelos = veiculos.filter(v => (v.fabricanteId === id) || (v.fabricante?.id === id));
-      if (!modelos.length) {
-        modelo.innerHTML = '<option value="">Nenhum modelo para este fabricante</option>';
+    // ---------- Fabricante → Modelos ----------
+    fabricanteSel.addEventListener('change', () => {
+      modeloSel.disabled = true;
+      modeloSel.innerHTML = '<option value="">Selecione o modelo</option>';
+      precoBaseHint.textContent = '';
+
+      const fabId = fabricanteSel.value;
+      if(!fabId) return;
+
+      const modelos = veiculos.filter(v => v.fabricanteId === fabId || v.fabricante?.id === fabId);
+      if(!modelos.length){
+        modeloSel.innerHTML = '<option value="">Nenhum modelo para este fabricante</option>';
         return;
       }
 
-      for (const v of modelos) {
-        const opt = document.createElement('option');
-        opt.value = v.id;
-        opt.textContent = v.modelo;
-        opt.dataset.preco = v.preco;
-        modelo.appendChild(opt);
-      }
-      modelo.disabled = false;
+      modelos.forEach(v => {
+        modeloSel.insertAdjacentHTML('beforeend',
+          `<option value="${v.id}" data-preco="${v.preco}">${v.modelo}</option>`);
+      });
+      modeloSel.disabled = false;
     });
 
-    // quando seleciona o modelo ➜ mostra preço base
-    modelo.addEventListener('change', () => {
-      const opt = modelo.selectedOptions[0];
-      if (!opt) { precoBase.textContent = ''; return; }
-      const p = Number(opt.dataset.preco || 0);
-      precoBase.textContent = p ? `Preço base do veículo: ${p.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '';
-      precoHint.textContent = p ? `O preço de venda deve ser ≤ ${p.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '';
+    // modelo selecionado → mostra preço base
+    modeloSel.addEventListener('change', () => {
+      const opt = modeloSel.selectedOptions[0];
+      const p = Number(opt?.dataset?.preco || 0);
+      precoBaseHint.textContent = p ? `Preço base do veículo: ${fmtBRL(p)}` : '';
+      precoHint.textContent     = p ? `O preço de venda deve ser ≤ ${fmtBRL(p)}` : '';
     });
 
-    // dica da concessionária
-    concessionaria.addEventListener('change', () => {
-      const c = concessionarias.find(x => x.id === concessionaria.value);
-      concHint.textContent = c ? `${c.cidade ?? ''} / ${c.estado ?? ''}` : '';
-    });
-
-    // busca cliente por CPF para preencher automático
-    cpf.addEventListener('blur', async () => {
-      const raw = cpf.value.replace(/\D/g,'');
+    // buscando cliente via api
+    cpfInp.addEventListener('blur', async () => {
+      const raw = onlyDigits(cpfInp.value);
       cliHint.textContent = '';
-      if (raw.length !== 11) { cliHint.textContent = 'CPF deve ter 11 dígitos.'; return; }
-      try{
-        const r = await fetch(`/api/clientes/by-cpf?cpf=${raw}`, { credentials:'include' });
-        if (r.ok) {
+      if(raw.length !== 11){ cliHint.textContent = 'CPF deve ter 11 dígitos.'; return; }
+
+      try {
+        const r = await fetch(`/api/clientes/by-cpf/${raw}`, { credentials:'include' });
+        if(r.ok){
           const c = await r.json();
-          if (c?.id) {
-            cliHint.textContent = 'Cliente encontrado.';
-            if (!nome.value) nome.value = c.nome || '';
-            if (!tel.value)  tel.value  = c.telefone || '';
-          } else {
-            cliHint.textContent = 'Cliente não encontrado. Será criado.';
+          if(c?.id){
+            if(!nomeInp.value) nomeInp.value = c.nome;
+            if(!telInp.value)  telInp.value  = c.telefone;
+          }else{
+            cliHint.textContent = 'Cliente não encontrado. Caso se mantenha esse CPF, ele será criado.';
           }
+        }else if(r.status === 404){
+          cliHint.textContent = 'Cliente não encontrado. Caso se mantenha esse CPF, ele será criado.';
+        }else{
+          cliHint.textContent = 'Falha ao consultar cliente.';
         }
-      } catch {}
+      } catch {
+        cliHint.textContent = 'Erro de rede ao consultar cliente.';
+      }
     });
 
-    document.getElementById('frmVenda').addEventListener('submit', async (e) => {
+    // ---------- submit ----------
+    qs('#frmVenda').addEventListener('submit', async (e) => {
       e.preventDefault(); clearMsg();
 
-      if (!fabricante.value)  return showMsg('Selecione o fabricante.');
-      if (!modelo.value)      return showMsg('Selecione o modelo.');
-      if (!concessionaria.value) return showMsg('Selecione a concessionária.');
+      if(!fabricanteSel.value) return showMsg('Selecione o fabricante.');
+      if(!modeloSel.value)     return showMsg('Selecione o modelo.');
+      if(!concSel.value)       return showMsg('Selecione a concessionária.');
 
-      const cpfNum = cpf.value.replace(/\D/g,'');
-      if (!/^\d{11}$/.test(cpfNum)) return showMsg('CPF inválido (11 dígitos).');
+      const cpfNum = onlyDigits(cpfInp.value);
+      if(!/^\d{11}$/.test(cpfNum)) return showMsg('CPF inválido (11 dígitos).');
 
-      const opt = modelo.selectedOptions[0];
-      const precoBaseNum = Number(opt?.dataset?.preco || 0);
-      const precoNum = Number(preco.value);
-      if (!(precoNum > 0)) return showMsg('Preço de venda deve ser positivo.');
-      if (precoBaseNum && precoNum > precoBaseNum) return showMsg('Preço de venda não pode exceder o preço do veículo.');
+      const opt = modeloSel.selectedOptions[0];
+      const precoBase = Number(opt?.dataset?.preco || 0);
+      const precoVenda = Number(precoInp.value);
+      if(!(precoVenda > 0)) return showMsg('Preço de venda deve ser positivo.');
+      if(precoBase && precoVenda > precoBase) return showMsg('Preço de venda não pode exceder o preço do veículo.');
 
-      const fabricanteNome = (fabricantes.find(f => f.id === fabricante.value) || {}).nomeFabricante || '';
-      const concNome       = (concessionarias.find(c => c.id === concessionaria.value) || {}).nome || '';
-      const veiculoModelo  = (veiculos.find(v => v.id === modelo.value) || {}).modelo || '';
+      // resolve nomes para o DTO da API de Vendas
+      const fabNome   = fabricantes.find(f => f.id === fabricanteSel.value)?.nomeFabricante || '';
+      const veicModelo= veiculos.find(v => v.id === modeloSel.value)?.modelo || '';
+      const conc      = concessionarias.find(c => c.id === concSel.value);
+      const concNomeOuLoc = (document.querySelector('input[name="critConc"]:checked')?.value === 'local')
+        ? `${conc?.cidade}/${conc?.estado}`
+        : (conc?.nome || '');
 
-      const body = {
-        ConcessionariaNomeOuLocalizacao: concNome,
-        FabricanteNome: fabricanteNome,
-        VeiculoModelo: veiculoModelo,
-        NomeCliente: nome.value.trim(),
+      const payload = {
+        ConcessionariaNomeOuLocalizacao: concNomeOuLoc,
+        FabricanteNome: fabNome,
+        VeiculoModelo: veicModelo,
+        NomeCliente: nomeInp.value.trim(),
         CpfCliente: cpfNum,
-        TelefoneCliente: tel.value.trim(),
-        DataVenda: data.value ? new Date(data.value).toISOString() : null,
-        PrecoVenda: precoNum
+        TelefoneCliente: telInp.value.trim(),
+        DataVenda: dataInp.value ? new Date(dataInp.value).toISOString() : null,
+        PrecoVenda: precoVenda
       };
 
-      try{
+      try {
         const r = await fetch('/api/vendas', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          credentials:'include',
-          body: JSON.stringify(body)
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
         });
 
-        if (!r.ok) {
+        if(!r.ok){
           const t = await r.text();
           return showMsg('Erro ao registrar venda: ' + t);
         }
 
         const created = await r.json();
-        showMsg(`Venda registrada! Protocolo: ${created.protocoloVenda}`, 'success');
-      }catch(ex){
+        showMsg(`Venda registrada! Protocolo: ${created.protocoloVenda || created.ProtocoloVenda}`, 'success');
+      } catch (ex) {
         showMsg('Erro de rede: ' + (ex?.message || ex));
       }
     });

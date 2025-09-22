@@ -77,7 +77,7 @@ namespace GestaoConcessionariasWebApp.Data
 
             builder.Entity<Venda>()
                 .Property(v => v.PrecoVenda)
-                .HasColumnType("decimal(18,2)");
+                .HasColumnType("decimal(10,2)");
 
             builder.Entity<Venda>()
                 .Property(v => v.ProtocoloVenda)

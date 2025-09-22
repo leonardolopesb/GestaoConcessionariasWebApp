@@ -49,7 +49,21 @@ public class AuthController : ControllerBase
         var success = await _user.CreateAsync(user, dto.Password);
 
         if (!success.Succeeded)
-            return BadRequest(success.Errors);
+        {
+            var codes = success.Errors.Select(e => e.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (codes.Contains("InvalidUserName"))
+                return BadRequest("O nome de usuário aceita apenas letras, números, pontos e hífens (não aceita espaços).");
+
+            if (codes.Contains("DuplicateUserName"))
+                return Conflict("Nome de usuário já está em uso.");
+
+            if (codes.Contains("DuplicateEmail"))
+                return Conflict("E-mail já está em uso.");
+
+            var msg = string.Join("; ", success.Errors.Select(e => e.Description));
+            return BadRequest(msg);
+        }
 
         await _user.AddToRoleAsync(user, dto.AccessLevel.ToString());
 

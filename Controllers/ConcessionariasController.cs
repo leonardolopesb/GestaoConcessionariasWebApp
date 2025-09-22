@@ -46,8 +46,8 @@ public class ConcessionariasController : ControllerBase
         var concessionaria = Concessionaria.Create(
             dto.Nome,
             dto.CEP,
-            dto.Estado, 
-            dto.Cidade,    
+            dto.Cidade,
+            dto.Estado,
             dto.Endereco,
             dto.Telefone,
             dto.Email,

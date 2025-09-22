@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Cadastrar Cliente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:640px">
+    <h1 class="mb-4">Cadastrar Cliente</h1>
+
+    <form id="frm" class="vstack gap-3">
+        <div id="msg" class="small"></div>
+
+        <input id="nome" class="form-control" placeholder="Nome" maxlength="100" required>
+
+        <div class="row g-2">
+            <div class="col-md-6">
+                <input id="cpf" class="form-control" placeholder="CPF (11 dígitos)" minlength="11" maxlength="11"
+                    required>
+            </div>
+            <div class="col-md-6">
+                <input id="tel" class="form-control" placeholder="Telefone" minlength="8" maxlength="15" required>
+            </div>
+        </div>
+        <div id="hint" class="form-text"></div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm">Salvar</button>
+            <a href="/tabelas/clientes/clientes.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+        </div>
+    </form>
+
+    <script src="/js/auth-guard.js"></script>
+    <script>
+        // Admin e Vendedor
+        requireAuth(['Admin', 'Vendedor']);
+
+        const reTel = /^[0-9()\-\s+]{8,15}$/;
+        const msg = document.getElementById('msg');
+        const hint = document.getElementById('hint');
+        const nome = document.getElementById('nome');
+        const cpf = document.getElementById('cpf');
+        const tel = document.getElementById('tel');
+
+        function showMsg(text, type = 'danger') { msg.className = `alert alert-${type}`; msg.textContent = text; }
+        function clearMsg() { msg.className = ''; msg.textContent = ''; }
+
+        // força dígitos no CPF ao digitar
+        cpf.addEventListener('input', () => {
+            cpf.value = cpf.value.replace(/\D/g, '').slice(0, 11);
+            hint.textContent = '';
+        });
+
+        // checa duplicidade por CPF ao sair do campo
+        cpf.addEventListener('blur', async () => {
+
+            hint.textContent = '';
+            if (cpf.value.length !== 11){
+                hint.textContent = 'CPF deve ter 11 dígitos.';
+                return;
+            }
+
+            const request = await fetch(`/api/clientes/by-cpf/${cpf.value}`, { credentials: 'include' });
+
+            if (request.ok) {
+                if ((request.json()?.id)) {
+                    hint.textContent = 'Já existe cliente com esse CPF.';
+                    hint.className = 'form-text text-danger';
+                }
+            }
+        });
+
+        function validate() {
+            const vNome = nome.value;
+            const vCPF = cpf.value;
+            const vTel = tel.value;
+
+            if (!vNome) return 'O nome é obrigatório.';
+            if (vNome.length > 100) return 'Nome: máximo 100 caracteres.';
+            if (vCPF.length !== 11) return 'CPF inválido (11 dígitos).';
+            if (!reTel.test(vTel)) return 'Telefone inválido. Use 8 a 15 caracteres (números e +()- ).';
+            return null;
+        }
+
+        document.getElementById('frm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMsg();
+
+            const err = validate();
+            if (err) { showMsg(err); return; }
+
+            try {
+                const dupe = await fetch(`/api/clientes/by-cpf/${cpf.value}`, { credentials: 'include' });
+                if (dupe.ok) {
+                    const c = await dupe.json();
+                    if (c?.id) { showMsg('Já existe cliente com esse CPF.'); return; }
+                }
+            } catch { }
+
+            const body = {
+                nome: nome.value.trim(),
+                cpf: cpf.value,
+                telefone: tel.value.trim()
+            };
+
+            try {
+                const r = await fetch('/api/clientes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+
+                if (r.ok) {
+                    showMsg('Cliente cadastrado com sucesso!', 'success');
+                    e.target.reset();
+                    hint.textContent = '';
+                } else {
+                    const t = await r.text();
+                    showMsg('Erro ao cadastrar: ' + t);
+                }
+            } catch (ex) {
+                showMsg('Erro de rede: ' + (ex?.message || ex));
+            }
+        });
+    </script>
+</body>
+
+</html>

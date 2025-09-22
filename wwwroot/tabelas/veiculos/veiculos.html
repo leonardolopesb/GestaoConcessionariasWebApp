@@ -8,40 +8,41 @@
 </head>
 
 <body class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="mb-0">Veículos</h1>
-    <div class="d-flex gap-2">
-      <button id="btnCarregar" class="btn btn-primary">Carregar Veículos</button>
-      <button id="btnCadastro" class="btn btn-secondary">Cadastrar Novo Veículo</button>
+  <main class="container py-4 page-wrap">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="mb-0">Veículos</h1>
+      <div class="d-flex gap-2">
+        <button id="btnCarregar" class="btn btn-primary">Carregar Veículos</button>
+        <button id="btnCadastro" class="btn btn-secondary">Adicionar Novo Veículo</button>
+      </div>
     </div>
-  </div>
 
-  <div id="msg" class="small"></div>
+    <div id="msg" class="small msg"></div>
 
-  <table class="table table-bordered table-striped">
-    <thead class="table-dark">
-      <tr>
-        <th>Id</th>
-        <th>Modelo</th>
-        <th>Ano</th>
-        <th>Preço</th>
-        <th>Tipo</th>
-        <th>Nome do Fabricante</th>
-        <th>Descrição</th>
-      </tr>
-    </thead>
-    <tbody id="tbody">
-      <tr>
-        <td colspan="7">Clique em "Carregar Veículos".</td>
-      </tr>
-    </tbody>
-  </table>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+          <tr>
+            <th>Id</th>
+            <th>Modelo</th>
+            <th>Ano</th>
+            <th>Preço</th>
+            <th>Tipo</th>
+            <th>Nome do Fabricante</th>
+            <th>Descrição</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr>
+            <td colspan="7">Clique em "Carregar Veículos".</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
 
   <script src="/js/auth-guard.js"></script>
   <script>
-    // exige login de Gerente
-    requireAuth('Gerente');
-
     const tbody = document.getElementById('tbody');
     const msg = document.getElementById('msg');
     const showMsg = (t, c = 'danger') => { msg.className = `small text-${c}`; msg.textContent = t; };
