@@ -73,8 +73,8 @@ dotnet run
 ```
 
 Ao executar o código acima, o projeto estará disponível em:
-- **Frontend:** [https://localhost:7020/](https://localhost:7020/)
-- **Swagger:** [https://localhost:7020/swagger](https://localhost:7020/swagger)
+- **Frontend:** [http://localhost:5298/](http://localhost:5298/)
+- **Swagger:** [http://localhost:5298/swagger](http://localhost:5298/swagger)
 
 ---
 
