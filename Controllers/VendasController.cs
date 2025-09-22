@@ -66,6 +66,7 @@ public sealed class VendasController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] CreateVendaDto dto)
     {
+        // Validações extra (principalmente das chaves estrangeiras)
         // Concessionária (nome ou localização)
         var concessionaria = await _db.Concessionarias
             .AsNoTracking()
@@ -102,7 +103,11 @@ public sealed class VendasController : ControllerBase
         if (cliente is null)
             return BadRequest("Cliente não encontrado.");
 
-        // Protocolo
+        // Data da Venda
+        if (dto.DataVenda.ToUniversalTime() > DateTime.UtcNow.AddSeconds(1))
+            return BadRequest("Data da venda não pode ser futura.");
+
+        // Geração de Protocolo
         string NovoProtocolo() =>
             $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}".Substring(0, 20).ToUpper();
 

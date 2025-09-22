@@ -52,7 +52,7 @@
             msg.textContent = '';
 
             const body = {
-                NomeUsuario: document.getElementById('NomeUsuario').value.trim(),
+                NomeUsuario: document.getElementById('NomeUsuario').value,
                 Password: document.getElementById('Password').value
             };
 
@@ -69,15 +69,15 @@
                 return;
             }
 
-            const meResp = await fetch('/auth/me', { credentials: 'include' });
-            if (!meResp.ok) {
+            const userResponse = await fetch('/auth/me', { credentials: 'include' });
+            if (!userResponse.ok) {
                 msg.className = 'text-warning small';
                 msg.textContent = 'Falha ao obter perfil.';
                 return;
             }
 
-            const me = await meResp.json();
-            const nivel = (me.AccessLevel || me.accessLevel || '').toString();
+            const user = await userResponse.json();
+            const nivel = user.accessLevel.toString();
 
             if (/Admin/i.test(nivel))
                 location.href = '/acessLevel/admin/home.html';

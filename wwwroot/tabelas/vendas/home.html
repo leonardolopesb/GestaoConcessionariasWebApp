@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vendas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/site.css" rel="stylesheet">
+</head>
+
+<body class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="mb-0">Lista de Vendas</h1>
+
+    <div class="d-flex gap-3">
+      <button id="btnCarregar" class="btn btn-primary">Carregar Vendas</button>
+      <a class="btn btn-success" href="/tabelas/vendas/cadastro.html">Nova Venda</a>
+      <button id="btnVoltar" class="btn btn-dark">Voltar</button>
+    </div>
+  </div>
+
+  <div id="msg" class="small"></div>
+
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Id</th>
+        <th>Protocolo</th>
+        <th>Data</th>
+        <th>Preço</th>
+        <th>Veículo</th>
+        <th>Concessionária</th>
+        <th>Cliente</th>
+        <th>CPF</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr>
+        <td colspan="8">Clique em "Carregar Vendas".</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    // apenas gerente e vendedor têm acesso aos dados
+    requireAuth(['Gerente', 'Vendedor']);
+
+    const tbody = document.getElementById('tbody');
+    const msg = document.getElementById('msg');
+
+    const showMsg = (t, c = 'danger') => { msg.className = `small text-${c}`; msg.textContent = t; };
+
+    // cache para simplificar o pull de dados
+    const cacheVeiculo = new Map();
+    const cacheConcessionaria = new Map();
+    const cacheCliente = new Map();
+
+    async function getVeiculoModelo(id) {
+      if (!id) return '';
+
+      if (cacheVeiculo.has(id)) return cacheVeiculo.get(id);
+      const response = await fetch(`/api/veiculos/${id}`, { credentials: 'include' });
+
+      const veiculo = response.ok ? await response.json() : null;
+      const modelo = veiculo?.modelo;
+
+      cacheVeiculo.set(id, modelo);
+
+      return modelo;
+    }
+
+    async function getConcessionariaNome(id) {
+      if (!id) return '';
+
+      if (cacheConcessionaria.has(id)) return cacheConcessionaria.get(id);
+      const response = await fetch(`/api/concessionarias/${id}`, { credentials: 'include' });
+
+      const concessionaria = response.ok ? await response.json() : null;
+      const nome = concessionaria?.nome;
+
+      cacheConcessionaria.set(id, nome);
+
+      return nome;
+    }
+
+    async function getClienteInfo(id) {
+      if (!id) return { nome: '', cpf: '' };
+
+      if (cacheCliente.has(id)) return cacheCliente.get(id);
+      const response = await fetch(`/api/clientes/${id}`, { credentials: 'include' });
+
+      const cliente = response.ok ? await response.json() : null;
+      const info = { nome: cliente?.nome, cpf: cliente?.cpf };
+
+      cacheCliente.set(id, info);
+
+      return info;
+    }
+
+    document.getElementById('btnCarregar').addEventListener('click', async () => {
+      tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
+      msg.textContent = '';
+      try {
+        const response = await fetch('/api/vendas', { credentials: 'include' });
+        if (!response.ok) throw new Error('Falha ao buscar vendas');
+
+        const data = await response.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8">Nenhuma venda criada.</td></tr>`;
+          return;
+        }
+
+        const rows = await Promise.all(data.map(async venda => {
+          const [modelo, concNome, cli] = await Promise.all([
+            venda.veiculoModelo ?? (await getVeiculoModelo(venda.veiculoId)),
+            venda.concessionariaNome ?? (await getConcessionariaNome(venda.concessionariaId)),
+            venda.clienteNome ? { nome: venda.clienteNome, cpf: venda.clienteCpf } : await getClienteInfo(venda.clienteId)
+          ]);
+
+          const dataPt = venda.dataVenda ? new Date(venda.dataVenda).toLocaleString('pt-BR') : '';
+          const preco = Number(venda.precoVenda ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+          return `
+          <tr>
+            <td>${venda.id}</td>
+            <td>${venda.protocolo}</td>
+            <td>${dataPt}</td>
+            <td>${preco}</td>
+            <td>${modelo}</td>
+            <td>${concNome}</td>
+            <td>${cli.nome}</td>
+            <td>${cli.cpf}</td>
+          </tr>`;
+        }));
+
+        tbody.innerHTML = rows.join('');
+      } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro ao carregar.</td></tr>`;
+        showMsg('Erro ao carregar vendas.');
+      }
+    });
+
+    document.getElementById('btnVoltar').addEventListener('click', () => {
+      location.href = '/index.html';
+    });
+  </script>
+</body>
+
+</html>

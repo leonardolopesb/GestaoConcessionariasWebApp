@@ -13,9 +13,11 @@
   <main class="container py-4 page-wrap">
     <div class="d-flex align-items-center justify-content-between mb-3 page-bar">
       <h1 class="mb-0">Concessionárias</h1>
-      <div class="d-flex gap-2">
+
+      <div class="d-flex gap-3">
         <button id="btnCarregar" class="btn btn-primary">Carregar Concessionárias</button>
         <button id="btnCadastro" class="btn btn-secondary">Cadastrar Nova Concessionária</button>
+        <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
 
@@ -26,14 +28,15 @@
             <th>Id</th>
             <th>Nome</th>
             <th>CEP</th>
-            <th>Estado</th>
             <th>Cidade</th>
+            <th>Estado</th>
             <th>Endereço</th>
             <th>Telefone</th>
             <th>E-mail</th>
             <th>Capacidade</th>
           </tr>
         </thead>
+        
         <tbody id="tbody">
           <tr>
             <td colspan="9">Clique em "Carregar Concessionárias"</td>
@@ -44,32 +47,36 @@
   </main>
 
   <script src="/js/auth-guard.js"></script>
-  
+
   <script>
     // apenas usuários logados podem acessar a página
     requireAuth(['Admin', 'Gerente', 'Vendedor']);
 
     const tbody = document.getElementById('tbody');
+
     document.getElementById('btnCarregar').addEventListener('click', async () => {
       tbody.innerHTML = `<tr><td colspan="9">Carregando...</td></tr>`;
       try {
-        const r = await fetch('/api/concessionarias', { credentials: 'include' });
-        if (!r.ok) throw new Error('Falha ao buscar');
-        const data = await r.json();
-        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="9">Nenhuma.</td></tr>`; return; }
+        const response = await fetch('/api/concessionarias', { credentials: 'include' });
+        if (!response.ok) throw new Error('Falha ao buscar');
+
+        const data = await response.json();
+        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="9">Nenhuma concessionária cadastrada.</td></tr>`; return; }
+
         tbody.innerHTML = '';
-        for (const c of data) {
+
+        for (const concessionaria of data) {
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
-              <td>${c.id}</td>
-              <td>${c.nome ?? ''}</td>
-              <td>${c.cep || ''}</td>
-              <td>${c.estado ?? ''}</td>
-              <td>${c.cidade ?? ''}</td>
-              <td>${c.endereco ?? ''}</td>
-              <td>${c.telefone ?? ''}</td>
-              <td>${c.email ?? ''}</td>
-              <td>${c.capacidadeMaximaVeiculos ?? ''}</td>
+              <td>${concessionaria.id}</td>
+              <td>${concessionaria.nome}</td>
+              <td>${concessionaria.cep}</td>
+              <td>${concessionaria.cidade}</td>
+              <td>${concessionaria.estado}</td>
+              <td>${concessionaria.endereco}</td>
+              <td>${concessionaria.telefone}</td>
+              <td>${concessionaria.email}</td>
+              <td>${concessionaria.capacidadeMaximaVeiculos}</td>
             </tr>`);
         }
       } catch (e) {
@@ -80,6 +87,10 @@
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/concessionarias/cadastro.html';
+    });
+
+    document.getElementById('btnVoltar').addEventListener('click', () => {
+      location.href = '/index.html';
     });
   </script>
 </body>

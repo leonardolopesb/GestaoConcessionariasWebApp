@@ -74,10 +74,10 @@ namespace GestaoConcessionariasWebApp.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Nome = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Endereco = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CEP = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Cidade = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Estado = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CEP = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Endereco = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Telefone = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CapacidadeMaximaVeiculos = table.Column<int>(type: "int", nullable: false),
@@ -243,7 +243,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     ConcessionariaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ClienteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DataVenda = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PrecoVenda = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PrecoVenda = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
                     ProtocoloVenda = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },

@@ -43,6 +43,13 @@ public class ConcessionariasController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Post([FromBody] CreateConcessionariaDto dto)
     {
+        var duplicado = await _db.Concessionarias
+            .IgnoreQueryFilters()
+            .AnyAsync(c => c.Nome == dto.Nome && !c.IsDeleted);
+
+        if (duplicado)
+            return Conflict("Já existe uma concessionária com esse nome.");
+
         var concessionaria = Concessionaria.Create(
             dto.Nome,
             dto.CEP,

@@ -139,6 +139,7 @@ public class VeiculosController : ControllerBase
 
     // POST: api/Veiculos/{id}/restore
     [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "Gerente")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var veiculo = await _db.Veiculos

@@ -6,13 +6,13 @@ public class Concessionaria
 
     public string Nome { get; private set; } = default!;
 
-    public string Endereco { get; private set; } = null!;
+    public string CEP { get; private set; } = null!;
 
     public string Cidade { get; private set; } = null!;
 
     public string Estado { get; private set; } = null!;
 
-    public string CEP { get; private set; } = null!;
+    public string Endereco { get; private set; } = null!;
 
     public string Telefone { get; private set; } = null!;
 
@@ -27,20 +27,20 @@ public class Concessionaria
     private Concessionaria(
         Guid id,
         string nome,
-        string endereco,
+        string cep,
         string cidade,
         string estado,
-        string cep,
+        string endereco,
         string telefone,
         string email,
         int capacidade)
     {
         Id = id == Guid.Empty ? Guid.NewGuid() : id;
         Nome = nome;
-        Endereco = endereco;
+        CEP = cep;
         Cidade = cidade;
         Estado = estado;
-        CEP = cep;
+        Endereco = endereco;
         Telefone = telefone;
         Email = email;
         CapacidadeMaximaVeiculos = capacidade;
@@ -49,32 +49,32 @@ public class Concessionaria
 
     public static Concessionaria Create(
         string nome,
-        string endereco,
+        string cep,
         string cidade,
         string estado,
-        string cep,
+        string endereco,
         string telefone,
         string email,
         int capacidade)
     {
-        return new Concessionaria(Guid.NewGuid(), nome, endereco, cidade, estado, cep, telefone, email, capacidade);
+        return new Concessionaria(Guid.NewGuid(), nome, cep, cidade, estado, endereco, telefone, email, capacidade);
     }
 
     public void Update(
         string nome,
-        string endereco,
+        string cep,
         string cidade,
         string estado,
-        string cep,
+        string endereco,
         string telefone,
         string email,
         int capacidade)
     {
         Nome = nome;
-        Endereco = endereco;
+        CEP = cep;
         Cidade = cidade;
         Estado = estado;
-        CEP = cep;
+        Endereco = endereco;
         Telefone = telefone;
         Email = email;
         CapacidadeMaximaVeiculos = capacidade;

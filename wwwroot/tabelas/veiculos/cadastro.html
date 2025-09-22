@@ -54,7 +54,7 @@
 
     <div class="d-flex gap-2">
       <button class="btn btn-success btn-sm">Salvar</button>
-      <a href="/tabelas/veiculos/veiculos.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+      <a href="/tabelas/veiculos/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
     </div>
   </form>
 
@@ -79,16 +79,18 @@
 
     (async function loadFabricantes(){
       try{
-        const r = await fetch('/api/fabricantes', { credentials: 'include' });
-        if(!r.ok) throw new Error('Falha ao buscar fabricantes');
-        const list = await r.json();
+        const response = await fetch('/api/fabricantes', { credentials: 'include' });
+        if(!response.ok) throw new Error('Falha ao buscar fabricantes');
+
+        const list = await response.json();
 
         fabricanteId.innerHTML = '<option value="">Selecione</option>';
+
         if(Array.isArray(list) && list.length){
-          for(const f of list){
+          for(const fabricante of list){
             const opt = document.createElement('option');
-            opt.value = f.id;
-            opt.textContent = f.nomeFabricante || '(sem nome)';
+            opt.value = fabricante.id;
+            opt.textContent = fabricante.nomeFabricante || '(sem nome)';
             fabricanteId.appendChild(opt);
           }
         }else{
@@ -106,8 +108,8 @@
 
     function validate(){
       const vModelo = modelo.value;
-      const vAno = Number(ano.value);
-      const vPreco = Number(preco.value);
+      const vAno = ano.value;
+      const vPreco = preco.value;
       const vFab = fabricanteId.value;
       const vTipo = tipoVeiculo.value;
       const vDesc = descricao.value;
@@ -115,7 +117,7 @@
       if(!vModelo) return 'O modelo é obrigatório.';
       if(vModelo.length > 100) return 'Modelo: máximo 100 caracteres.';
 
-      if(!Number.isInteger(vAno) || vAno > currentYear)
+      if(vAno > currentYear) 
         return `Ano de fabricação deve ser menor que o ano atual: ${currentYear}.`;
 
       if(!(vPreco > 0)) return 'O preço deve ser maior que 0 reais.';
@@ -138,8 +140,8 @@
 
       const body = {
         modelo: modelo.value,
-        anoFabricacao: Number(ano.value),
-        preco: Number(preco.value),
+        anoFabricacao: ano.value,
+        preco: preco.value,
         fabricanteId: fabricanteId.value,
         tipoVeiculo: Number(tipoVeiculo.value),
         descricao: descricao.value || null
@@ -155,7 +157,7 @@
 
         if(r.ok){
           alert('Veículo cadastrado com sucesso!');
-          location.href = '/tabelas/veiculos/veiculos.html';
+          location.href = '/tabelas/veiculos/home.html';
         }else{
           const txt = await r.text();
           showMsg('Erro ao salvar: ' + txt);

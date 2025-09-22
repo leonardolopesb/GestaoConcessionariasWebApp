@@ -18,28 +18,32 @@
 
         <div class="row g-2">
             <div class="col-md-4">
-                <input id="cep" class="form-control" placeholder="CEP (00000-000)" minlength="8" maxlength="10" required>
+                <input id="cep" class="form-control" placeholder="CEP (00000-000)" minlength="8" maxlength="10"
+                    required>
             </div>
-            <div class="col-md-4">
-                <input id="estado" class="form-control" placeholder="Estado" maxlength="50" required>
-            </div>
+
             <div class="col-md-4">
                 <input id="cidade" class="form-control" placeholder="Cidade" maxlength="50" required>
+            </div>
+
+            <div class="col-md-4">
+                <input id="estado" class="form-control" placeholder="Estado" maxlength="50" required>
             </div>
         </div>
 
         <div class="row g-2">
             <div class="col-md-8">
-                <input id="endereco" type="text" class="form-control" placeholder="Rua, Avenida, etc" maxlength="255" required>
+                <input id="endereco" type="text" class="form-control" placeholder="Rua, Avenida, etc" maxlength="255"
+                    required>
             </div>
             <div class="col-md-4">
-                <input id="addressNumber" type="number" min="1" class="form-control" placeholder="Número do endereço" maxlength="4" required>
+                <input id="addressNumber" min="1" class="form-control" placeholder="Número do endereço" maxlength="4" required>
             </div>
         </div>
 
         <div class="row g-2">
             <div class="col-md-6">
-                <input id="telefone" class="form-control" placeholder="Telefone" minlength="8" maxlength="15" required>
+                <input id="telefone" class="form-control" type="number" placeholder="Telefone" minlength="8" maxlength="15" required>
             </div>
             <div class="col-md-6">
                 <input id="email" class="form-control" type="email" placeholder="E-mail" maxlength="100" required>
@@ -51,7 +55,7 @@
 
         <div class="d-flex gap-2">
             <button class="btn btn-success btn-sm">Salvar</button>
-            <a href="/tabelas/concessionarias/concessionarias.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+            <a href="/tabelas/concessionarias/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
         </div>
     </form>
 
@@ -61,12 +65,12 @@
         // somente o administrador pode acessar a página de cadastro
         requireAuth('Admin');
 
-        const reCep8 = /^\d{8}$/;
+        const reCep = /^\d{8}$/;
         const reTelefone = /^[0-9()\-\s+]{8,15}$/;
         const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const max = { nome: 100, estado: 50, cidade: 50, endereco: 255 };
 
-        // cache dos campos
+        // cache
         const frm = document.getElementById('frmNova');
         const nome = document.getElementById('nome');
         const cep = document.getElementById('cep');
@@ -95,25 +99,24 @@
 
         // Consulta ViaCEP ao sair do campo
         cep.addEventListener('blur', async () => {
-            const raw = cep.value.trim();
             cepValidoViaCEP = false;
 
-            if (!reCep8.test(raw)) {
-                showMsg('CEP inválido (8 dígitos).');
+            if (!reCep.test(cep.value)) {
+                showMsg('CEP inválido. Insira 8 dígitos.');
                 return;
             }
 
             try {
-                const r = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+                const r = await fetch(`https://viacep.com.br/ws/${cep.value}/json/`);
 
                 const data = await r.json();
-                if (data.erro){
+                if (data.erro) {
                     showMsg('CEP não encontrado.');
                     return;
                 }
 
                 // Preenche automaticamente
-                estado.value = data.uf || '';
+                estado.value = data.estado || '';
                 cidade.value = data.localidade || '';
                 endereco.value = data.logradouro || '';
 
@@ -133,10 +136,10 @@
             const v = {
                 nome: nome.value,
                 cep: cep.value,
-                estado: estado.value,
                 cidade: cidade.value,
+                estado: estado.value,
                 endereco: endereco.value,
-                addressNumber: addressNumber.value,
+                addressNumber: Number(addressNumber.value),
                 telefone: telefone.value,
                 email: email.value,
                 capacidade: capacidade.value
@@ -145,33 +148,33 @@
             // obrigatoriedade
             if (!v.nome) return 'O Nome é obrigatório.';
             if (!v.cep) return 'O CEP é obrigatório.';
-            if (!v.estado) return 'O Estado é obrigatório.';
             if (!v.cidade) return 'A Cidade é obrigatória.';
+            if (!v.estado) return 'O Estado é obrigatório.';
             if (!v.endereco) return 'O Endereço é obrigatório.';
-            if (!v.addressNumber) return 'O Número do endereço é obrigatório.';
+            if (!v.addressNumber) return 'O Número do endereço é obrigatório e precisa ser um número válido.';
             if (!v.telefone) return 'O Telefone é obrigatório.';
             if (!v.email) return 'O E-mail é obrigatório.';
             if (!v.capacidade) return 'A Capacidade é obrigatória.';
 
             // tamanhos
             if (v.nome.length > max.nome) return `Nome: máximo ${max.nome} caracteres.`;
-            if (v.estado.length > max.estado) return `Estado: máximo ${max.estado} caracteres.`;
             if (v.cidade.length > max.cidade) return `Cidade: máximo ${max.cidade} caracteres.`;
+            if (v.estado.length > max.estado) return `Estado: máximo ${max.estado} caracteres.`;
             if (v.endereco.length > max.endereco) return `Endereço: máximo ${max.endereco} caracteres.`;
-            if (v.endereco < 0) return `O número do endereço precisa ser um valor positivo.`;
+            if (v.addressNumber < 0) return `O número do endereço precisa ser um valor positivo.`;
 
             // formatando valores
             if (!reTelefone.test(v.telefone)) return 'Telefone inválido. Digite somente números.';
             if (!reEmail.test(v.email)) return 'E-mail inválido. Formato incorreto.';
 
-            // capacidade numérica
+            // capacidade máxima de veículos
             const cap = Number(v.capacidade);
-            if (!Number.isInteger(cap) || cap <= 0) return 'Capacidade deve ser um inteiro > 0.';
+            if (!Number.isInteger(cap) || cap <= 0) return 'Capacidade deve ser um inteiro maior que zero.';
 
             // exigimos validação ViaCEP bem-sucedida
-            if (!cepValidoViaCEP) return 'Valide o CEP (ViaCEP) antes de salvar.';
+            if (!cepValidoViaCEP) return 'Valide o CEP antes de salvar.';
 
-            return null; // ok
+            return null;
         }
 
         frm.addEventListener('submit', async (e) => {
@@ -179,34 +182,42 @@
             clearMsg();
 
             const error = validateForm();
-            if (error) { showMsg(error); return; }
+            if (error) {
+                showMsg(error);
+                return;
+            }
 
-            // prepara payload (CEP apenas números)
+            // payload
             const body = {
-                nome: nome.value.trim(),
+                nome: nome.value,
                 cep: cep.value.replace(/\D/g, ''),
-                estado: estado.value.trim(),
-                cidade: cidade.value.trim(),
-                endereco: `${endereco.value.trim()}, nº ${addressNumber.value.trim()}`,
-                telefone: telefone.value.trim(),
-                email: email.value.trim(),
-                capacidadeMaximaVeiculos: Number(capacidade.value.trim())
+                cidade: cidade.value,
+                estado: estado.value,
+                endereco: `${endereco.value}, nº ${addressNumber.value}`,
+                telefone: telefone.value,
+                email: email.value,
+                capacidadeMaximaVeiculos: capacidade.value
             };
 
             try {
-                const r = await fetch('/api/concessionarias', {
+                const response = await fetch('/api/concessionarias', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify(body)
                 });
 
-                if (r.ok) {
+                if (response.ok) {
                     alert('Concessionária cadastrada com sucesso!');
-                    frm.reset();
-                    cepValidoViaCEP = false;
-                } else {
-                    const txt = await r.text();
+                    location.href = '/tabelas/concessionarias/home.html';
+                }
+
+                else if (response.status === 409) {
+                    showMsg('Já existe uma concessionária com esse nome.');
+                }
+
+                else {
+                    const txt = await response.text();
                     showMsg('Erro ao cadastrar: ' + txt);
                 }
             } catch (ex) {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8" />
   <title>Nova Venda</title>
@@ -26,7 +27,7 @@
         </div>
 
         <div class="col-md-6">
-          <label class="form-label">Modelo (do fabricante escolhido)</label>
+          <label class="form-label">Modelo do veículo (do fabricante escolhido)</label>
           <select id="modelo" class="form-select" disabled required>
             <option value="">Selecione um fabricante</option>
           </select>
@@ -93,7 +94,8 @@
         </div>
 
         <div class="col-md-6">
-          <input id="preco" type="number" step="0.01" min="0.01" class="form-control" placeholder="Preço de venda (R$)" required>
+          <input id="preco" type="number" step="0.01" min="0.01" class="form-control" placeholder="Preço de venda (R$)"
+            required>
         </div>
 
       </div>
@@ -101,39 +103,41 @@
 
     <div class="d-flex gap-2">
       <button class="btn btn-success btn-sm">Finalizar Venda</button>
-      <a class="btn btn-outline-secondary btn-sm" href="/tabelas/vendas/vendas.html">Voltar</a>
+      <a class="btn btn-outline-secondary btn-sm" href="/tabelas/vendas/home.html">Voltar</a>
     </div>
   </form>
 
   <script src="/js/auth-guard.js"></script>
   <script>
-    requireAuth('Vendedor', 'Gerente');
+    // apenas gerente e vendedor têm acesso à página de novas vendas
+    requireAuth('Vendedor');
 
     // helpers
     const qs = s => document.querySelector(s);
-    const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    const onlyDigits = s => (s||'').replace(/\D/g,'');
-    const showMsg = (t, type='danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
+    const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const onlyDigits = s => (s || '').replace(/\D/g, '');
+    const showMsg = (t, type = 'danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
     const clearMsg = () => { msg.className = ''; msg.textContent = ''; };
 
-    // ---------- elementos ----------
+    // elementos
+    const form = document.getElementById('frmVenda');
     const msg = qs('#msg');
 
-    const fabricanteSel   = qs('#fabricante');
-    const modeloSel       = qs('#modelo');
-    const precoBaseHint   = qs('#precoBase');
+    const fabricanteSel = qs('#fabricante');
+    const modeloSel = qs('#modelo');
+    const precoBaseHint = qs('#precoBase');
 
-    const concSel         = qs('#concessionaria');
-    const concHint        = qs('#concHint');
-    const critRadios      = document.getElementsByName('critConc');
+    const concSel = qs('#concessionaria');
+    const concHint = qs('#concHint');
+    const critRadios = document.getElementsByName('critConc');
 
-    const cpfInp          = qs('#cpf');
-    const nomeInp         = qs('#nome');
-    const telInp          = qs('#tel');
-    const cliHint         = qs('#cliHint');
+    const cpfInp = qs('#cpf');
+    const nomeInp = qs('#nome');
+    const telInp = qs('#tel');
+    const cliHint = qs('#cliHint');
 
-    const dataInp         = qs('#data');
-    const precoInp        = qs('#preco');
+    const dataInp = qs('#data');
+    const precoInp = qs('#preco');
 
     // cache
     let fabricantes = [];
@@ -141,17 +145,17 @@
     let concessionarias = [];
 
     // requisições api
-    (async function boot(){
+    (async function boot() {
       try {
         const [rf, rv, rc] = await Promise.all([
-          fetch('/api/fabricantes',     { credentials:'include' }),
-          fetch('/api/veiculos',        { credentials:'include' }),
-          fetch('/api/concessionarias', { credentials:'include' })
+          fetch('/api/fabricantes', { credentials: 'include' }),
+          fetch('/api/veiculos', { credentials: 'include' }),
+          fetch('/api/concessionarias', { credentials: 'include' })
         ]);
-        if(!rf.ok || !rv.ok || !rc.ok) throw new Error('Falha ao carregar dados iniciais');
+        if (!rf.ok || !rv.ok || !rc.ok) throw new Error('Falha ao carregar dados iniciais');
 
-        fabricantes   = await rf.json();
-        veiculos      = await rv.json();
+        fabricantes = await rf.json();
+        veiculos = await rv.json();
         concessionarias = await rc.json();
 
         // fabricantes
@@ -165,15 +169,15 @@
         // data atual local
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        dataInp.value = now.toISOString().slice(0,16);
+        dataInp.value = now.toISOString().slice(0, 16);
       } catch (e) {
         console.error(e);
         showMsg('Erro ao carregar dados iniciais.');
       }
     })();
 
-    // ---------- Concessionárias ----------
-    function renderConcessionarias(criterio){
+    // Concessionárias
+    function renderConcessionarias(criterio) {
       concSel.innerHTML = '<option value="">Selecione...</option>';
       concessionarias.forEach(c => {
         const label = criterio === 'nome'
@@ -187,17 +191,17 @@
       r.addEventListener('change', e => renderConcessionarias(e.target.value === 'local' ? 'local' : 'nome'))
     );
 
-    // ---------- Fabricante → Modelos ----------
+    // Fabricante e Modelos 
     fabricanteSel.addEventListener('change', () => {
       modeloSel.disabled = true;
       modeloSel.innerHTML = '<option value="">Selecione o modelo</option>';
       precoBaseHint.textContent = '';
 
       const fabId = fabricanteSel.value;
-      if(!fabId) return;
+      if (!fabId) return;
 
       const modelos = veiculos.filter(v => v.fabricanteId === fabId || v.fabricante?.id === fabId);
-      if(!modelos.length){
+      if (!modelos.length) {
         modeloSel.innerHTML = '<option value="">Nenhum modelo para este fabricante</option>';
         return;
       }
@@ -209,33 +213,67 @@
       modeloSel.disabled = false;
     });
 
-    // modelo selecionado → mostra preço base
+    // Validação por data da Venda
+
+    (function initNowMax() {
+      const now = new Date();
+      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+      dataInp.value = localIso;
+      dataInp.max = localIso;
+    })();
+
+    function isFutureLocal(dtLocalStr) {
+      if (!dtLocalStr) return false;
+      const chosenUtc = new Date(dtLocalStr).getTime();
+      const nowUtc = Date.now();
+      return chosenUtc > nowUtc + 3000;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      if (isFutureLocal(dataInp.value)) {
+        showMsg("Data da venda não pode ser futura.");
+        return;
+      }
+    });
+
+
+    // mostra preço base ao selecionar veículo
     modeloSel.addEventListener('change', () => {
       const opt = modeloSel.selectedOptions[0];
       const p = Number(opt?.dataset?.preco || 0);
       precoBaseHint.textContent = p ? `Preço base do veículo: ${fmtBRL(p)}` : '';
-      precoHint.textContent     = p ? `O preço de venda deve ser ≤ ${fmtBRL(p)}` : '';
     });
 
     // buscando cliente via api
     cpfInp.addEventListener('blur', async () => {
       const raw = onlyDigits(cpfInp.value);
       cliHint.textContent = '';
-      if(raw.length !== 11){ cliHint.textContent = 'CPF deve ter 11 dígitos.'; return; }
+      if (raw.length !== 11) { cliHint.textContent = 'CPF deve ter 11 dígitos.'; return; }
 
       try {
-        const r = await fetch(`/api/clientes/by-cpf/${raw}`, { credentials:'include' });
-        if(r.ok){
-          const c = await r.json();
-          if(c?.id){
-            if(!nomeInp.value) nomeInp.value = c.nome;
-            if(!telInp.value)  telInp.value  = c.telefone;
-          }else{
-            cliHint.textContent = 'Cliente não encontrado. Caso se mantenha esse CPF, ele será criado.';
+        const response = await fetch(`/api/clientes/by-cpf/${raw}`, { credentials: 'include' });
+
+        if (response.ok) {
+          const cliente = await response.json();
+
+          if (cliente?.id) {
+            if (!nomeInp.value) nomeInp.value = cliente.nome;
+            if (!telInp.value) telInp.value = cliente.telefone;
           }
-        }else if(r.status === 404){
-          cliHint.textContent = 'Cliente não encontrado. Caso se mantenha esse CPF, ele será criado.';
-        }else{
+
+          else cliHint.textContent = 'Cliente não encontrado.';
+
+        }
+
+        else if (response.status === 404) {
+          cliHint.textContent = 'Cliente não encontrado.';
+        }
+
+        else {
           cliHint.textContent = 'Falha ao consultar cliente.';
         }
       } catch {
@@ -247,26 +285,25 @@
     qs('#frmVenda').addEventListener('submit', async (e) => {
       e.preventDefault(); clearMsg();
 
-      if(!fabricanteSel.value) return showMsg('Selecione o fabricante.');
-      if(!modeloSel.value)     return showMsg('Selecione o modelo.');
-      if(!concSel.value)       return showMsg('Selecione a concessionária.');
+      if (!fabricanteSel.value) return showMsg('Selecione o fabricante.');
+      if (!modeloSel.value) return showMsg('Selecione o modelo.');
+      if (!concSel.value) return showMsg('Selecione a concessionária.');
 
       const cpfNum = onlyDigits(cpfInp.value);
-      if(!/^\d{11}$/.test(cpfNum)) return showMsg('CPF inválido (11 dígitos).');
+      if (!/^\d{11}$/.test(cpfNum)) return showMsg('CPF inválido (11 dígitos).');
 
       const opt = modeloSel.selectedOptions[0];
       const precoBase = Number(opt?.dataset?.preco || 0);
       const precoVenda = Number(precoInp.value);
-      if(!(precoVenda > 0)) return showMsg('Preço de venda deve ser positivo.');
-      if(precoBase && precoVenda > precoBase) return showMsg('Preço de venda não pode exceder o preço do veículo.');
+      if (!(precoVenda > 0)) return showMsg('Preço de venda deve ser positivo.');
+      if (precoBase && precoVenda > precoBase) return showMsg('Preço de venda não pode exceder o preço do veículo.');
 
       // resolve nomes para o DTO da API de Vendas
-      const fabNome   = fabricantes.find(f => f.id === fabricanteSel.value)?.nomeFabricante || '';
-      const veicModelo= veiculos.find(v => v.id === modeloSel.value)?.modelo || '';
-      const conc      = concessionarias.find(c => c.id === concSel.value);
-      const concNomeOuLoc = (document.querySelector('input[name="critConc"]:checked')?.value === 'local')
-        ? `${conc?.cidade}/${conc?.estado}`
-        : (conc?.nome || '');
+      const fabNome = fabricantes.find(f => f.id === fabricanteSel.value)?.nomeFabricante || '';
+      const veicModelo = veiculos.find(v => v.id === modeloSel.value)?.modelo || '';
+
+      const conc = concessionarias.find(c => c.id === concSel.value);
+      const concNomeOuLoc = conc?.nome || conc?.nome || conc?.estado || conc?.estado || '';
 
       const payload = {
         ConcessionariaNomeOuLocalizacao: concNomeOuLoc,
@@ -287,7 +324,7 @@
           body: JSON.stringify(payload)
         });
 
-        if(!r.ok){
+        if (!r.ok) {
           const t = await r.text();
           return showMsg('Erro ao registrar venda: ' + t);
         }
@@ -300,4 +337,5 @@
     });
   </script>
 </body>
+
 </html>

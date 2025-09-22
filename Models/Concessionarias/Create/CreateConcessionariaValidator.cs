@@ -18,17 +18,17 @@ public class CreateConcessionariaValidator : AbstractValidator<CreateConcessiona
             .Matches(@"^\d{10}$")
             .WithMessage("CEP inválido. Use apenas 8 dígitos (ex: 51140235).");
 
-        RuleFor(x => x.Estado)
-            .NotEmpty()
-            .WithMessage("O estado é obrigatório.")
-            .MaximumLength(50)
-            .WithMessage("O estado deve ter no máximo 50 caracteres.");
-
         RuleFor(x => x.Cidade)
             .NotEmpty()
             .WithMessage("A cidade é obrigatória.")
             .MaximumLength(50)
             .WithMessage("A cidade deve ter no máximo 50 caracteres.");
+
+        RuleFor(x => x.Estado)
+            .NotEmpty()
+            .WithMessage("O estado é obrigatório.")
+            .MaximumLength(50)
+            .WithMessage("O estado deve ter no máximo 50 caracteres.");
 
         RuleFor(x => x.Endereco)
             .NotEmpty()

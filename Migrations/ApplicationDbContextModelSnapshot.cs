@@ -48,7 +48,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     b.HasIndex("CPF")
                         .IsUnique();
 
-                    b.ToTable("Clientes", (string)null);
+                    b.ToTable("Clientes");
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Concessionarias.Concessionaria", b =>
@@ -96,7 +96,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     b.HasIndex("Nome")
                         .IsUnique();
 
-                    b.ToTable("Concessionarias", (string)null);
+                    b.ToTable("Concessionarias");
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Fabricantes.Fabricante", b =>
@@ -129,7 +129,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                     b.HasIndex("NomeFabricante")
                         .IsUnique();
 
-                    b.ToTable("Fabricantes", (string)null);
+                    b.ToTable("Fabricantes");
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Users.ApplicationUser", b =>
@@ -245,7 +245,7 @@ namespace GestaoConcessionariasWebApp.Migrations
 
                     b.HasIndex("FabricanteId");
 
-                    b.ToTable("Veiculos", (string)null);
+                    b.ToTable("Veiculos");
                 });
 
             modelBuilder.Entity("GestaoConcessionariasWebApp.Models.Vendas.Venda", b =>
@@ -267,7 +267,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal>("PrecoVenda")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("ProtocoloVenda")
                         .IsRequired()
@@ -288,7 +288,7 @@ namespace GestaoConcessionariasWebApp.Migrations
 
                     b.HasIndex("VeiculoId");
 
-                    b.ToTable("Vendas", (string)null);
+                    b.ToTable("Vendas");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

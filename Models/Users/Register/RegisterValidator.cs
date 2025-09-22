@@ -23,10 +23,17 @@ public sealed class RegisterValidator : AbstractValidator<RegisterDto>
         RuleFor(x => x.Password)
             .NotEmpty()
             .WithMessage("A senha é obrigatória.")
-            .MinimumLength(6)
-            .WithMessage("A senha deve ter no mínimo 6 caracteres.")
+            .MinimumLength(8)
+            .WithMessage("A senha deve ter no mínimo 8 caracteres.")
             .MaximumLength(255)
-            .WithMessage("A senha deve ter no máximo 255 caracteres.");
+            .WithMessage("A senha deve ter no máximo 255 caracteres.")
+            .Matches(@"[A-Z]")
+            .WithMessage("A senha deve conter pelo menos uma letra maiúscula.")
+            .Matches(@"[a-z]")
+            .WithMessage("A senha deve conter pelo menos uma letra minúscula.")
+            .Matches(@"\d")
+            .WithMessage("A senha deve conter pelo menos um número.");
+
 
         RuleFor(x => x.AccessLevel)
             .IsInEnum()

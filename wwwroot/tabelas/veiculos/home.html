@@ -3,21 +3,23 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Veículos</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/site.css" rel="stylesheet">
 </head>
 
 <body class="container py-4">
   <main class="container py-4 page-wrap">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h1 class="mb-0">Veículos</h1>
-      <div class="d-flex gap-2">
+
+      <div class="d-flex gap-3">
         <button id="btnCarregar" class="btn btn-primary">Carregar Veículos</button>
         <button id="btnCadastro" class="btn btn-secondary">Adicionar Novo Veículo</button>
+        <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
-
-    <div id="msg" class="small msg"></div>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
@@ -43,19 +45,19 @@
 
   <script src="/js/auth-guard.js"></script>
   <script>
+    requireAuth(['Gerente', 'Vendedor']);
+
     const tbody = document.getElementById('tbody');
-    const msg = document.getElementById('msg');
-    const showMsg = (t, c = 'danger') => { msg.className = `small text-${c}`; msg.textContent = t; };
 
     document.getElementById('btnCarregar').addEventListener('click', loadVeiculos);
 
     async function loadVeiculos() {
       tbody.innerHTML = `<tr><td colspan="7">Carregando...</td></tr>`;
-      msg.textContent = '';
       try {
-        const r = await fetch('/api/veiculos', { credentials: 'include' });
-        if (!r.ok) throw new Error('Falha ao buscar veículos');
-        const list = await r.json();
+        const response = await fetch('/api/veiculos', { credentials: 'include' });
+        if (!response.ok) throw new Error('Falha ao buscar veículos');
+
+        const list = await response.json();
 
         if (!Array.isArray(list) || list.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado.</td></tr>`;
@@ -63,20 +65,21 @@
         }
 
         tbody.innerHTML = '';
-        for (const v of list) {
-          const precoFmt = typeof v.preco === 'number'
-            ? v.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : (v.preco ?? '');
+
+        for (const veiculo of list) {
+          const precoFormatado = typeof veiculo.preco === 'number'
+            ? veiculo.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : (veiculo.preco ?? '');
 
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
-              <td>${v.id}</td>
-              <td>${v.modelo}</td>
-              <td>${v.anoFabricacao}</td>
-              <td>${precoFmt}</td>
-              <td>${v.tipoVeiculo}</td>
-              <td>${v.fabricanteNome}</td>
-              <td>${v.descricao ?? ''}</td>
+              <td>${veiculo.id}</td>
+              <td>${veiculo.modelo}</td>
+              <td>${veiculo.anoFabricacao}</td>
+              <td>${precoFormatado}</td>
+              <td>${veiculo.tipoVeiculo}</td>
+              <td>${veiculo.fabricanteNome}</td>
+              <td>${veiculo.descricao ?? ''}</td>
             </tr>`);
         }
       } catch (e) {
@@ -88,6 +91,10 @@
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/veiculos/cadastro.html';
+    });
+
+    document.getElementById('btnVoltar').addEventListener('click', () => {
+      location.href = '/index.html';
     });
   </script>
 </body>

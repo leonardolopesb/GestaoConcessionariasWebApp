@@ -65,7 +65,7 @@ public sealed class ClientesController : ControllerBase
 
     // PUT: api/Clientes/{id}
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Gerente")]
+    [Authorize(Roles = "Gerente, Vendedor")]
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateClienteDto dto)
     {
         var cliente = await _db.Clientes.FindAsync(id);

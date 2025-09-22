@@ -6,7 +6,6 @@ using GestaoConcessionariasWebApp.Models.Veiculos;
 using GestaoConcessionariasWebApp.Models.Vendas;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 namespace GestaoConcessionariasWebApp.Data
 {

@@ -15,12 +15,16 @@
       <div class="col-12">
         <input id="nome" class="form-control" placeholder="Nome do usuário" required />
       </div>
+
       <div class="col-6">
-        <input id="email" class="form-control" placeholder="E-mail" required />
+        <input id="email" class="form-control" type="email" placeholder="E-mail" maxlength="100" required />
       </div>
+
       <div class="col-6">
-        <input id="password" class="form-control" type="password" placeholder="Senha" required />
+        <input id="password" class="form-control" type="password" placeholder="Senha" minlength="8" maxlength="255" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$"
+          title="A senha deve ter pelo menos uma letra maiúscula, uma minúscula e um número." required />
       </div>
+
       <div class="col-12">
         <select id="nivel" class="form-select">
           <option value="Admin">Administrador</option>
@@ -28,9 +32,10 @@
           <option value="Vendedor" selected>Vendedor</option>
         </select>
       </div>
+
       <div class="col-12">
         <button class="btn btn-success btn-sm">Criar</button>
-        <a class="btn btn-link" href="/acessLevel/admin/home.html">Voltar</a>
+        <a class="btn btn-link" href="/tabelas/usuarios/home.html">Voltar</a>
       </div>
     </form>
 
@@ -69,21 +74,21 @@
         AccessLevel: document.getElementById('nivel').value
       };
 
-      const r = await fetch('/auth/register', {
+      const response = await fetch('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(body)
       });
 
-      if (r.ok) {
+      if (response.ok) {
         msg.className = 'text-success';
         msg.textContent = 'Usuário criado!';
         form.reset();
-      } else if (r.status === 401 || r.status === 403) {
+      } else if (response.status === 401 || response.status === 403) {
         msg.className = 'text-danger';
         msg.textContent = await r.text(); // "Nível de acesso inválido. Apenas administradorem podem cadastrar novos usuários.";
-      } else if (r.status === 409) {
+      } else if (response.status === 409) {
         msg.className = 'text-danger';
         msg.textContent = await r.text(); // "Nome de usuário (ou email) já está em uso.";
         return;

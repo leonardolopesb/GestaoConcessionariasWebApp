@@ -13,9 +13,11 @@
   <main class="container py-4 page-wrap">
     <div class="d-flex align-items-center justify-content-between mb-3 page-bar">
       <h1 class="mb-0">Fabricantes</h1>
-      <div class="d-flex gap-2">
+
+      <div class="d-flex gap-3">
         <button id="btnCarregar" class="btn btn-primary">Carregar Fabricantes</button>
         <button id="btnCadastro" class="btn btn-secondary">Adicionar Novo Fabricante</button>
+        <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
 
@@ -30,6 +32,7 @@
             <th>Website</th>
           </tr>
         </thead>
+        
         <tbody id="tbody">
           <tr>
             <td colspan="5">Clique em "Carregar Fabricantes"</td>
@@ -50,21 +53,21 @@
     document.getElementById('btnCarregar').addEventListener('click', async () => {
       tbody.innerHTML = `<tr><td colspan="5">Carregando...</td></tr>`;
       try {
-        const r = await fetch('/api/fabricantes', { credentials: 'include' });
-        if (!r.ok) throw new Error('Falha ao buscar fabricantes');
-        const data = await r.json();
+        const response = await fetch('/api/fabricantes', { credentials: 'include' });
+        if (!response.ok) throw new Error('Falha ao buscar fabricantes');
 
-        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5">Nenhum fabricante.</td></tr>`; return; }
+        const data = await response.json();
+        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5">Nenhum fabricante cadastrado.</td></tr>`; return; }
 
         tbody.innerHTML = '';
-        for (const f of data) {
+        for (const fabricante of data) {
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
-              <td>${f.id}</td>
-              <td>${f.nomeFabricante ?? ''}</td>
-              <td>${f.paisOrigem ?? ''}</td>
-              <td>${f.anoFundacao ?? ''}</td>
-              <td>${f.website ? `<a href="${f.website}" target="_blank">${f.website}</a>` : ''}</td>
+              <td>${fabricante.id}</td>
+              <td>${fabricante.nomeFabricante ?? ''}</td>
+              <td>${fabricante.paisOrigem ?? ''}</td>
+              <td>${fabricante.anoFundacao ?? ''}</td>
+              <td>${fabricante.website ? `<a href="${fabricante.website}" target="_blank">${fabricante.website}</a>` : ''}</td>
             </tr>
           `);
         }
@@ -76,6 +79,10 @@
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/fabricantes/cadastro.html';
+    });
+
+    document.getElementById('btnVoltar').addEventListener('click', () => {
+      location.href = '/index.html';
     });
   </script>
 </body>

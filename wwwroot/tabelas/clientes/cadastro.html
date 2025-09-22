@@ -28,21 +28,23 @@
 
         <div class="d-flex gap-2">
             <button class="btn btn-success btn-sm">Salvar</button>
-            <a href="/tabelas/clientes/clientes.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+            <a href="/tabelas/clientes/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
         </div>
     </form>
 
     <script src="/js/auth-guard.js"></script>
     <script>
-        // Admin e Vendedor
-        requireAuth(['Admin', 'Vendedor']);
+        // todos logados podem cadastrar clientes
+        requireAuth(['Gerente', 'Vendedor']);
 
-        const reTel = /^[0-9()\-\s+]{8,15}$/;
         const msg = document.getElementById('msg');
         const hint = document.getElementById('hint');
+
         const nome = document.getElementById('nome');
         const cpf = document.getElementById('cpf');
         const tel = document.getElementById('tel');
+
+        const regexTelefone = /^[0-9()\-\s+]{8,15}$/;
 
         function showMsg(text, type = 'danger') { msg.className = `alert alert-${type}`; msg.textContent = text; }
         function clearMsg() { msg.className = ''; msg.textContent = ''; }
@@ -53,11 +55,11 @@
             hint.textContent = '';
         });
 
-        // checa duplicidade por CPF ao sair do campo
+        // checa duplicidade por CPF
         cpf.addEventListener('blur', async () => {
 
             hint.textContent = '';
-            if (cpf.value.length !== 11){
+            if (cpf.value.length !== 11) {
                 hint.textContent = 'CPF deve ter 11 dígitos.';
                 return;
             }
@@ -80,7 +82,7 @@
             if (!vNome) return 'O nome é obrigatório.';
             if (vNome.length > 100) return 'Nome: máximo 100 caracteres.';
             if (vCPF.length !== 11) return 'CPF inválido (11 dígitos).';
-            if (!reTel.test(vTel)) return 'Telefone inválido. Use 8 a 15 caracteres (números e +()- ).';
+            if (!regexTelefone.test(vTel)) return 'Telefone inválido. Use 8 a 15 caracteres (números e +()- ).';
             return null;
         }
 
@@ -89,40 +91,40 @@
             clearMsg();
 
             const err = validate();
-            if (err) { showMsg(err); return; }
+            if (err) {
+                showMsg(err)
+                return;
+            }
 
-            try {
-                const dupe = await fetch(`/api/clientes/by-cpf/${cpf.value}`, { credentials: 'include' });
-                if (dupe.ok) {
-                    const c = await dupe.json();
-                    if (c?.id) { showMsg('Já existe cliente com esse CPF.'); return; }
+            const check = await fetch(`/api/clientes/by-cpf/${cpf.value}`, { credentials: 'include' });
+            if (check.ok) {
+                const cliente = await check.json();
+
+                if (cliente?.id) {
+                    showMsg('Já existe cliente com esse CPF.');
+                    return;
                 }
-            } catch { }
+            }
 
             const body = {
-                nome: nome.value.trim(),
+                nome: nome.value,
                 cpf: cpf.value,
-                telefone: tel.value.trim()
+                telefone: tel.value
             };
 
-            try {
-                const r = await fetch('/api/clientes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify(body)
-                });
+            const response = await fetch('/api/clientes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(body)
+            });
 
-                if (r.ok) {
-                    showMsg('Cliente cadastrado com sucesso!', 'success');
-                    e.target.reset();
-                    hint.textContent = '';
-                } else {
-                    const t = await r.text();
-                    showMsg('Erro ao cadastrar: ' + t);
-                }
-            } catch (ex) {
-                showMsg('Erro de rede: ' + (ex?.message || ex));
+            if (response.ok) {
+                alert('Cliente cadastrado com sucesso!');
+                location.href = '/tabelas/clientes/home.html';
+            } else {
+                const t = await response.text();
+                showMsg('Erro ao cadastrar: ' + t);
             }
         });
     </script>

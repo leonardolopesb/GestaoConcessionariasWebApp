@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestaoConcessionariasWebApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250920213520_AddMigration")]
+    [Migration("20250922151231_AddMigration")]
     partial class AddMigration
     {
         /// <inheritdoc />
@@ -270,7 +270,7 @@ namespace GestaoConcessionariasWebApp.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal>("PrecoVenda")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("ProtocoloVenda")
                         .IsRequired()
