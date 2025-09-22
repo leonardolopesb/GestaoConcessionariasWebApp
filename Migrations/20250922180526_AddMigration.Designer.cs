@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GestaoConcessionariasWebApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250922151231_AddMigration")]
+    [Migration("20250922180526_AddMigration")]
     partial class AddMigration
     {
         /// <inheritdoc />

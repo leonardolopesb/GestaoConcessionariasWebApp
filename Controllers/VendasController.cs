@@ -76,7 +76,7 @@ public sealed class VendasController : ControllerBase
                 x.Estado == dto.ConcessionariaNomeOuLocalizacao ||
                 x.Endereco == dto.ConcessionariaNomeOuLocalizacao);
 
-        if (concessionaria is null)
+        if (concessionaria is null) 
             return BadRequest("Concessionária não encontrada.");
 
         // Fabricante
@@ -126,7 +126,7 @@ public sealed class VendasController : ControllerBase
             veiculo.Id,
             concessionaria.Id,
             cliente.Id,
-            dto.DataVenda.ToUniversalTime(),
+            TimeZoneInfo.ConvertTimeToUtc(dto.DataVenda.ToLocalTime()),
             dto.PrecoVenda,
             protocolo);
 

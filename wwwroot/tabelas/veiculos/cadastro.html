@@ -18,7 +18,7 @@
       </div>
       <div class="col-md-3">
         <label class="form-label">Ano de Fabricação</label>
-        <input id="ano" type="number" class="form-control" max="2025" placeholder="Ex.: 2025" required>
+        <input id="ano" type="number" class="form-control" min="1" max="2025" placeholder="Ex.: 2025" required>
       </div>
       <div class="col-md-3">
         <label class="form-label">Preço</label>
@@ -117,8 +117,8 @@
       if(!vModelo) return 'O modelo é obrigatório.';
       if(vModelo.length > 100) return 'Modelo: máximo 100 caracteres.';
 
-      if(vAno > currentYear) 
-        return `Ano de fabricação deve ser menor que o ano atual: ${currentYear}.`;
+      if(vAno > currentYear) return `Ano de fabricação deve ser menor que o ano atual: ${currentYear}.`;
+      if (vAno < 0) rerturn `Ano de fabricação precisa ser um número positivo.`
 
       if(!(vPreco > 0)) return 'O preço deve ser maior que 0 reais.';
       if (!(vPreco < 100000000)) return 'O preço deve ser menor do que 100 milhões de reais.'
