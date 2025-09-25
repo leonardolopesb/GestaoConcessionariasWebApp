@@ -33,13 +33,18 @@ namespace GestaoConcessionariasWebApp.Data
                 e.Property(u => u.Email).HasMaxLength(100);
                 e.Property(u => u.PasswordHash).HasMaxLength(255);
                 e.Property(u => u.AccessLevel).HasConversion<string>();
-
-                e.HasQueryFilter(u => !u.IsDeleted);
             });
 
             builder.Entity<ApplicationUser>()
                 .HasIndex(u => u.NomeUsuario)
                 .IsUnique();
+
+            builder.Entity<ApplicationUser>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            builder.Entity<ApplicationUser>()
+                .HasQueryFilter(u => !u.IsDeleted);
 
             // Configurações do Fabricante
             builder.Entity<Fabricante>()
@@ -49,9 +54,10 @@ namespace GestaoConcessionariasWebApp.Data
             builder.Entity<Fabricante>()
                 .HasQueryFilter(f => !f.IsDeleted);
 
-            builder.Entity<Fabricante>()
-                .Property(f => f.Website)
-                .HasMaxLength(255);
+            /*builder.Entity<Fabricante>()
+                .Property(f => f.NomeFabricante)
+                .HasMaxLength(100)
+                .IsRequired();*/
 
             // Configurações da Concessionária
             builder.Entity<Concessionaria>()

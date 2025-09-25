@@ -12,10 +12,14 @@ namespace GestaoConcessionariasWebApp.Controllers;
 [Route("auth")]
 public class AuthController : ControllerBase
 {
+    #region Dependências
     private readonly UserManager<ApplicationUser> _user;
     private readonly SignInManager<ApplicationUser> _signIn;
     private readonly RoleManager<IdentityRole> _role;
 
+    #endregion
+
+    #region Construtor
     public AuthController(
         UserManager<ApplicationUser> user,
         SignInManager<ApplicationUser> signIn,
@@ -26,6 +30,9 @@ public class AuthController : ControllerBase
         _role = role;
     }
 
+    #endregion
+
+    #region REGISTER
     [HttpPost("register")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Register(RegisterDto dto)
@@ -76,6 +83,9 @@ public class AuthController : ControllerBase
         });
     }
 
+    #endregion
+
+    #region LOGIN
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(LoginDto dto)
@@ -100,6 +110,9 @@ public class AuthController : ControllerBase
         return Ok("Login realizado.");
     }
 
+    #endregion
+
+    #region LOGOUT
     [HttpPost("logout")]
     [AllowAnonymous]
     public async Task<IActionResult> Logout()
@@ -108,6 +121,9 @@ public class AuthController : ControllerBase
         return Ok("Logout realizado.");
     }
 
+    #endregion
+
+    #region ME
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> Me()
@@ -125,4 +141,6 @@ public class AuthController : ControllerBase
             AccessLevel = user.AccessLevel.ToString()
         });
     }
+
+    #endregion
 }
