@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editar Venda</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:980px">
+    <h1 class="mb-2">Editar Venda</h1>
+
+    <!-- Protocolo NOVO (somente leitura) -->
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="text-muted">Novo protocolo:</span>
+        <span class="badge text-bg-secondary" id="protocoloView">—</span>
+        <button id="btnRegen" type="button" class="btn btn-outline-secondary btn-sm">Gerar outro</button>
+    </div>
+
+    <div id="msg" class="mb-3"></div>
+
+    <form id="frmVenda" class="vstack gap-3">
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label small mb-1">Data da Venda</label>
+                <input id="dataVenda" type="datetime-local" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small mb-1">Preço</label>
+                <input id="precoVenda" type="number" min="0" step="0.01" class="form-control" placeholder="Preço"
+                    required>
+            </div>
+        </div>
+
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label small mb-1">Veículo</label>
+                <select id="veiculoId" class="form-select" required></select>
+                <div class="form-text">Fabricante: <span id="fabricanteNome" class="fw-semibold">—</span></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small mb-1">Concessionária</label>
+                <select id="concessionariaId" class="form-select" required></select>
+            </div>
+        </div>
+
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label small mb-1">Cliente</label>
+                <input id="clienteNome" type="text" class="form-control" placeholder="Nome do Cliente" disabled>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small mb-1">CPF</label>
+                <input id="clienteCpf" type="text" class="form-control" placeholder="CPF do Cliente" disabled>
+            </div>
+        </div>
+
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm">Salvar</button>
+            <a id="btnVoltar" href="/tabelas/vendas/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+        </div>
+    </form>
+
+    <script src="/js/auth-guard.js"></script>
+    <script type="module">
+        // Somente vendedor pode editar
+        requireAuth('Vendedor');
+
+        const qs = new URLSearchParams(location.search);
+        const id = qs.get('id');
+        const returnUrl = qs.get('returnUrl') || '/tabelas/vendas/home.html';
+
+        const msgEl = document.getElementById('msg');
+        const frm = document.getElementById('frmVenda');
+        const protocoloView = document.getElementById('protocoloView');
+        const btnRegen = document.getElementById('btnRegen');
+        const dataVenda = document.getElementById('dataVenda');
+        const precoVenda = document.getElementById('precoVenda');
+        const veiculoId = document.getElementById('veiculoId');
+        const concessionariaId = document.getElementById('concessionariaId');
+        const fabricanteNome = document.getElementById('fabricanteNome');
+
+        // campos de cliente (somente leitura)
+        const clienteNome = document.getElementById('clienteNome');
+        const clienteCpf = document.getElementById('clienteCpf');
+
+        let clienteIdEl = document.getElementById('clienteId');
+        if (!clienteIdEl) {
+            clienteIdEl = document.createElement('input');
+            clienteIdEl.type = 'hidden';
+            clienteIdEl.id = 'clienteId';
+            frm.appendChild(clienteIdEl);
+        }
+
+        const btnVoltar = document.getElementById('btnVoltar');
+        if (btnVoltar) btnVoltar.href = returnUrl;
+
+        function showMsg(t, type = 'danger') { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; }
+        function clearMsg() { msgEl.className = ''; msgEl.textContent = ''; }
+
+        const toLocalDatetimeValue = (iso) => {
+            if (!iso) return '';
+            const d = new Date(iso);
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        };
+
+        let novoProtocolo = '';
+        function generateProtocol(prefix = 'VEN') {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const date = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+            const time = `${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+            const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+            return `${prefix}-${date}${time}-${rand}`;
+        }
+        function regenProtocol() {
+            novoProtocolo = generateProtocol();
+            if (protocoloView) protocoloView.textContent = novoProtocolo;
+        }
+        if (btnRegen) btnRegen.addEventListener('click', regenProtocol);
+
+        async function carregarListas() {
+            const [rV, rC] = await Promise.all([
+                fetch('/api/veiculos', { credentials: 'include' }),
+                fetch('/api/concessionarias', { credentials: 'include' })
+            ]);
+
+            const veiculos = rV.ok ? await rV.json() : [];
+            const concs = rC.ok ? await rC.json() : [];
+
+            veiculoId.innerHTML = '<option value="">Selecione...</option>' + veiculos.map(v =>
+                `<option value="${v.id}" data-fab-id="${v.fabricanteId ?? ''}" data-fab-nome="${v.fabricanteNome ?? ''}">
+         ${v.modelo} (${v.anoFabricacao})
+       </option>`).join('');
+
+            concessionariaId.innerHTML = '<option value="">Selecione...</option>' + concs.map(c =>
+                `<option value="${c.id}">${c.nome} - ${c.cidade}/${c.estado}</option>`).join('');
+        }
+
+        async function preencherFabricantePorVeiculo(vid) {
+            if (!vid) { fabricanteNome.textContent = '—'; return; }
+
+            const opt = veiculoId.querySelector(`option[value="${vid}"]`);
+            const cachedNome = opt?.dataset?.fabNome;
+            if (cachedNome) { fabricanteNome.textContent = cachedNome; return; }
+
+            const rv = await fetch(`/api/veiculos/${vid}`, { credentials: 'include' });
+            if (!rv.ok) { fabricanteNome.textContent = '—'; return; }
+            const v = await rv.json();
+
+            if (v?.fabricanteNome) { fabricanteNome.textContent = v.fabricanteNome; return; }
+
+            if (v?.fabricanteId) {
+                const rf = await fetch(`/api/fabricantes/${v.fabricanteId}`, { credentials: 'include' });
+                if (rf.ok) {
+                    const f = await rf.json();
+                    fabricanteNome.textContent = f?.nomeFabricante ?? '—';
+                    return;
+                }
+            }
+            fabricanteNome.textContent = '—';
+        }
+        veiculoId.addEventListener('change', () => preencherFabricantePorVeiculo(veiculoId.value));
+
+        async function carregarClienteDados(idCliente) {
+            if (!idCliente) {
+                clienteNome.value = '';
+                clienteCpf.value = '';
+                return;
+            }
+            const r = await fetch(`/api/clientes/${idCliente}`, { credentials: 'include' });
+            if (!r.ok) {
+                clienteNome.value = '';
+                clienteCpf.value = '';
+                return;
+            }
+            const c = await r.json();
+            clienteNome.value = c?.nome ?? '';
+            clienteCpf.value = c?.cpf ?? '';
+        }
+
+        async function carregar() {
+            if (!id) { showMsg('Id da venda não informado.'); return; }
+            clearMsg(); showMsg('Carregando...', 'secondary');
+
+            const rVenda = await fetch(`/api/vendas/${id}`, { credentials: 'include' });
+            if (!rVenda.ok) { showMsg('Venda não encontrada.'); return; }
+            const venda = await rVenda.json();
+
+            await carregarListas();
+
+            // gera novo protocolo
+            regenProtocol();
+
+            // campos editáveis
+            dataVenda.value = toLocalDatetimeValue(venda?.dataVenda);
+            precoVenda.value = Number(venda?.precoVenda ?? 0);
+            veiculoId.value = venda?.veiculoId ?? '';
+            concessionariaId.value = venda?.concessionariaId ?? '';
+            await preencherFabricantePorVeiculo(veiculoId.value);
+
+            // cliente não editável
+            clienteIdEl.value = venda?.clienteId || '';
+            if (venda?.clienteNome || venda?.clienteCpf) {
+                clienteNome.value = venda?.clienteNome ?? '';
+                clienteCpf.value = venda?.clienteCpf ?? '';
+            } else {
+                await carregarClienteDados(clienteIdEl.value);
+            }
+
+            clearMsg();
+        }
+        document.addEventListener('DOMContentLoaded', carregar);
+
+        function validate() {
+            if (!dataVenda.value) return 'Data da venda é obrigatória.';
+            const pv = Number(precoVenda.value);
+            if (!Number.isFinite(pv) || pv < 0) return 'Preço inválido.';
+            if (!veiculoId.value) return 'Selecione um veículo.';
+            if (!concessionariaId.value) return 'Selecione uma concessionária.';
+            if (!clienteIdEl.value) return 'Cliente não informado.';
+            return null;
+        }
+
+        frm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMsg();
+
+            const err = validate();
+            if (err) { showMsg(err); return; }
+
+            if (!novoProtocolo) regenProtocol();
+
+            async function doPut(protocol) {
+                const body = {
+                    id,
+                    protocolo: protocol, // novo protocolo
+                    dataVenda: new Date(dataVenda.value).toISOString(),
+                    precoVenda: Number(precoVenda.value),
+                    veiculoId: veiculoId.value,
+                    concessionariaId: concessionariaId.value,
+                    clienteId: clienteIdEl.value
+                };
+                return fetch(`/api/vendas/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+            }
+
+            let r = await doPut(novoProtocolo);
+            if (r.status === 409) {
+                regenProtocol();
+                r = await doPut(novoProtocolo);
+            }
+
+            if (r.ok) {
+                showMsg('Venda atualizada com sucesso!', 'success');
+            } else {
+                const txt = await r.text();
+                showMsg('Erro ao salvar: ' + (txt || r.statusText));
+            }
+        });
+    </script>
+
+</body>
+
+</html>

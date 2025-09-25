@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Cliente</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:900px">
+  <h1 class="mb-4">Editar Cliente</h1>
+  <div id="msg" class="mb-3"></div>
+
+  <form id="frmCli" class="vstack gap-3">
+    <input id="nome" class="form-control" maxlength="150" placeholder="Nome do Cliente" required>
+
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="cpf" class="form-control" inputmode="numeric" pattern="^\d{11}$" maxlength="11"
+               placeholder="CPF (apenas números)" required
+               title="Informe 11 dígitos, apenas números.">
+      </div>
+      <div class="col-md-6">
+        <input id="telefone" class="form-control" maxlength="20" placeholder="Telefone (opcional)">
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success btn-sm">Salvar</button>
+      <a id="btnVoltar" href="/tabelas/clientes/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </form>
+
+  <script src="/js/auth-guard.js"></script>
+  <script type="module">
+    // somente gerente pode editar
+    requireAuth(['Gerente']);
+
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const returnUrl = qs.get('returnUrl') || '/tabelas/clientes/home.html';
+
+    const msgEl = document.getElementById('msg');
+    const frm = document.getElementById('frmCli');
+    const nome = document.getElementById('nome');
+    const cpf = document.getElementById('cpf');
+    const telefone = document.getElementById('telefone');
+    document.getElementById('btnVoltar').href = returnUrl;
+
+    function showMsg(t, type = 'danger') { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; }
+    function clearMsg() { msgEl.className = ''; msgEl.textContent = ''; }
+
+    function validate() {
+      const vNome = nome.value.trim();
+      const vCpf = cpf.value.trim();
+      if (!vNome) return 'O nome é obrigatório.';
+      if (vNome.length > 150) return 'Nome: máximo 150 caracteres.';
+      if (!/^\d{11}$/.test(vCpf)) return 'CPF inválido. Use 11 dígitos (somente números).';
+      if (telefone.value && telefone.value.length > 20) return 'Telefone: no máximo 20 caracteres.';
+      return null;
+    }
+
+    async function carregar() {
+      if (!id) { showMsg('Id do cliente não informado.'); return; }
+      clearMsg(); showMsg('Carregando...', 'secondary');
+
+      const r = await fetch(`/api/clientes/${id}`, { credentials: 'include' });
+      if (!r.ok) { showMsg('Cliente não encontrado.'); return; }
+
+      const cli = await r.json();
+      nome.value = cli?.nome ?? '';
+      cpf.value = (cli?.cpf ?? '').replace(/\D/g, '');
+      telefone.value = cli?.telefone ?? '';
+
+      clearMsg();
+    }
+
+    frm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const err = validate();
+      if (err) { showMsg(err); return; }
+
+      const body = {
+        id,
+        nome: nome.value.trim(),
+        cpf: cpf.value.trim(),
+        telefone: telefone.value.trim()
+      };
+
+      const r = await fetch(`/api/clientes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+
+      if (r.ok) {
+        showMsg('Cliente atualizado com sucesso!', 'success');
+      } else if (r.status === 409) {
+        const txt = (await r.text()) || 'Já existe um cliente com esse CPF.';
+        showMsg(txt);
+      } else {
+        const txt = await r.text();
+        showMsg('Erro ao salvar: ' + (txt || r.statusText));
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', carregar);
+  </script>
+</body>
+</html>

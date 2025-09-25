@@ -15,11 +15,12 @@
       <h1 class="mb-0">Fabricantes</h1>
 
       <div class="d-flex gap-3">
-        <button id="btnCarregar" class="btn btn-primary">Carregar Fabricantes</button>
-        <button id="btnCadastro" class="btn btn-secondary">Adicionar Novo Fabricante</button>
+        <button id="btnCadastro" class="btn btn-primary">Adicionar Novo Fabricante</button>
         <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
+
+    <div id="msg" class="mb-3"></div>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped mb-0">
@@ -30,12 +31,13 @@
             <th>País</th>
             <th>Ano Fundação</th>
             <th>Website</th>
+            <th>Ações</th>
           </tr>
         </thead>
-        
+
         <tbody id="tbody">
           <tr>
-            <td colspan="5">Clique em "Carregar Fabricantes"</td>
+            <td colspan="6">Carregando..."</td>
           </tr>
         </tbody>
       </table>
@@ -49,15 +51,22 @@
     requireAuth(['Admin', 'Gerente', 'Vendedor']);
 
     const tbody = document.getElementById('tbody');
+    const msgEl = document.getElementById('msg');
 
-    document.getElementById('btnCarregar').addEventListener('click', async () => {
+    const showMsg = (t, type = 'danger') => { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; };
+    const clearMsg = () => { msgEl.className = ''; msgEl.textContent = ''; };
+
+    async function carregarFabricantes() {
       tbody.innerHTML = `<tr><td colspan="5">Carregando...</td></tr>`;
       try {
         const response = await fetch('/api/fabricantes', { credentials: 'include' });
         if (!response.ok) throw new Error('Falha ao buscar fabricantes');
 
         const data = await response.json();
-        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="5">Nenhum fabricante cadastrado.</td></tr>`; return; }
+        if (!data?.length) {
+          tbody.innerHTML = `<tr><td colspan="6">Nenhum fabricante cadastrado.</td></tr>`;
+          return;
+        }
 
         tbody.innerHTML = '';
         for (const fabricante of data) {
@@ -68,6 +77,12 @@
               <td>${fabricante.paisOrigem ?? ''}</td>
               <td>${fabricante.anoFundacao ?? ''}</td>
               <td>${fabricante.website ? `<a href="${fabricante.website}" target="_blank">${fabricante.website}</a>` : ''}</td>
+              <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary" 
+                  href="/tabelas/fabricantes/editar.html?id=${fabricante.id}&returnUrl=${encodeURIComponent(location.pathname)}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" 
+                  href="/tabelas/fabricantes/deletar.html?id=${fabricante.id}&returnUrl=${encodeURIComponent(location.pathname)}">Excluir</a>
+              </td>
             </tr>
           `);
         }
@@ -75,7 +90,8 @@
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="5" class="text-danger">Erro ao carregar.</td></tr>`;
       }
-    });
+    }
+    document.addEventListener('DOMContentLoaded', carregarFabricantes);
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/fabricantes/cadastro.html';

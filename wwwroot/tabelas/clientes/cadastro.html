@@ -9,10 +9,9 @@
 
 <body class="container py-4" style="max-width:640px">
     <h1 class="mb-4">Cadastrar Cliente</h1>
+    <div id="msg" class="mb-3"></div>
 
     <form id="frm" class="vstack gap-3">
-        <div id="msg" class="small"></div>
-
         <input id="nome" class="form-control" placeholder="Nome" maxlength="100" required>
 
         <div class="row g-2">
@@ -35,7 +34,7 @@
     <script src="/js/auth-guard.js"></script>
     <script>
         // todos logados podem cadastrar clientes
-        requireAuth(['Gerente', 'Vendedor']);
+        requireAuth('Gerente');
 
         const msg = document.getElementById('msg');
         const hint = document.getElementById('hint');
@@ -46,8 +45,8 @@
 
         const regexTelefone = /^[0-9()\-\s+]{8,15}$/;
 
-        function showMsg(text, type = 'danger') { msg.className = `alert alert-${type}`; msg.textContent = text; }
-        function clearMsg() { msg.className = ''; msg.textContent = ''; }
+        const showMsg = (t, type = 'danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
+        const clearMsg = () => { msg.className = ''; msg.textContent = ''; };
 
         // força dígitos no CPF ao digitar
         cpf.addEventListener('input', () => {
@@ -120,8 +119,7 @@
             });
 
             if (response.ok) {
-                alert('Cliente cadastrado com sucesso!');
-                location.href = '/tabelas/clientes/home.html';
+                showMsg(`Cliente ${nome.value} cadastrado com sucesso!`, 'success');
             } else {
                 const t = await response.text();
                 showMsg('Erro ao cadastrar: ' + t);

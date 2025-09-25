@@ -9,6 +9,7 @@
 
 <body class="auth-wrapper container py-5" style="max-width:640px">
   <h1 class="mb-4">Registrar Usuário</h1>
+  <div id="msg" class="mb-3"></div>
 
   <div class="card auth-card p-4">
     <form id="frmRegister" class="row g-3">
@@ -38,9 +39,6 @@
         <a class="btn btn-link" href="/tabelas/usuarios/home.html">Voltar</a>
       </div>
     </form>
-
-    <div id="msg" class="mt-3"></div>
-
   </div>
 
   <script src="/js/auth-guard.js"></script>
@@ -49,6 +47,9 @@
     requireAuth('Admin');
 
     const nomeInput = document.getElementById('nome');
+
+    const showMsg = (t, type = 'danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
+    const clearMsg = () => { msg.className = ''; msg.textContent = ''; };
 
     nomeInput.addEventListener('input', () => {
       nomeInput.value = nomeInput.value.replace(/\s+/g, '');
@@ -82,19 +83,13 @@
       });
 
       if (response.ok) {
-        msg.className = 'text-success';
-        msg.textContent = 'Usuário criado!';
-        form.reset();
+        showMsg('Usuário criado!', 'success');
       } else if (response.status === 401 || response.status === 403) {
-        msg.className = 'text-danger';
-        msg.textContent = await r.text(); // "Nível de acesso inválido. Apenas administradorem podem cadastrar novos usuários.";
+        showMsg(await response.text());
       } else if (response.status === 409) {
-        msg.className = 'text-danger';
-        msg.textContent = await r.text(); // "Nome de usuário (ou email) já está em uso.";
-        return;
+        showMsg(await response.text());
       } else {
-        msg.className = 'text-danger';
-        msg.textContent = 'Erro ao registrar: ' + (await r.text());
+        showMsg('Erro ao registrar: E-mail já está em uso.');
       }
     });
   </script>

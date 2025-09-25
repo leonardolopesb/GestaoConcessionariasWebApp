@@ -15,11 +15,12 @@
       <h1 class="mb-0">Concessionárias</h1>
 
       <div class="d-flex gap-3">
-        <button id="btnCarregar" class="btn btn-primary">Carregar Concessionárias</button>
-        <button id="btnCadastro" class="btn btn-secondary">Cadastrar Nova Concessionária</button>
+        <button id="btnCadastro" class="btn btn-primary">Cadastrar Nova Concessionária</button>
         <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
+
+    <div id="msg" class="mb-3"></div>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped mb-0">
@@ -34,12 +35,13 @@
             <th>Telefone</th>
             <th>E-mail</th>
             <th>Capacidade</th>
+            <th>Ações</th>
           </tr>
         </thead>
-        
+
         <tbody id="tbody">
           <tr>
-            <td colspan="9">Clique em "Carregar Concessionárias"</td>
+            <td colspan="10">Clique em "Carregar Concessionárias"</td>
           </tr>
         </tbody>
       </table>
@@ -53,37 +55,52 @@
     requireAuth(['Admin', 'Gerente', 'Vendedor']);
 
     const tbody = document.getElementById('tbody');
+    const msgEl = document.getElementById('msg');
+    const showMsg = (t, type = 'danger') => { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; };
+    const clearMsg = () => { msgEl.className = ''; msgEl.textContent = ''; };
 
-    document.getElementById('btnCarregar').addEventListener('click', async () => {
-      tbody.innerHTML = `<tr><td colspan="9">Carregando...</td></tr>`;
+    async function carregarConcessionarias() {
+      tbody.innerHTML = `<tr><td colspan="10">Carregando...</td></tr>`;
+      clearMsg();
       try {
         const response = await fetch('/api/concessionarias', { credentials: 'include' });
         if (!response.ok) throw new Error('Falha ao buscar');
 
         const data = await response.json();
-        if (!data?.length) { tbody.innerHTML = `<tr><td colspan="9">Nenhuma concessionária cadastrada.</td></tr>`; return; }
+        if (!data?.length) {
+          tbody.innerHTML = `<tr><td colspan="10">Nenhuma concessionária cadastrada.</td></tr>`;
+          return;
+        }
 
         tbody.innerHTML = '';
-
-        for (const concessionaria of data) {
+        for (const c of data) {
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
-              <td>${concessionaria.id}</td>
-              <td>${concessionaria.nome}</td>
-              <td>${concessionaria.cep}</td>
-              <td>${concessionaria.cidade}</td>
-              <td>${concessionaria.estado}</td>
-              <td>${concessionaria.endereco}</td>
-              <td>${concessionaria.telefone}</td>
-              <td>${concessionaria.email}</td>
-              <td>${concessionaria.capacidadeMaximaVeiculos}</td>
-            </tr>`);
+              <td>${c.id}</td>
+              <td>${c.nome ?? ''}</td>
+              <td>${c.cep ?? ''}</td>
+              <td>${c.cidade ?? ''}</td>
+              <td>${c.estado ?? ''}</td>
+              <td>${c.endereco ?? ''}</td>
+              <td>${c.telefone ?? ''}</td>
+              <td>${c.email ?? ''}</td>
+              <td>${c.capacidadeMaximaVeiculos ?? ''}</td>
+              <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="/tabelas/concessionarias/editar.html?id=${c.id}&returnUrl=${encodeURIComponent(location.pathname)}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger"
+                   href="/tabelas/concessionarias/deletar.html?id=${c.id}&returnUrl=${encodeURIComponent(location.pathname)}">Excluir</a>
+              </td>
+            </tr>
+          `);
         }
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-danger">Erro</td></tr>`;
         console.error(e);
+        tbody.innerHTML = `<tr><td colspan="10" class="text-danger">Erro ao carregar.</td></tr>`;
+        showMsg('Erro ao carregar concessionárias.');
       }
-    });
+    }
+    document.addEventListener('DOMContentLoaded', carregarConcessionarias);
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/concessionarias/cadastro.html';

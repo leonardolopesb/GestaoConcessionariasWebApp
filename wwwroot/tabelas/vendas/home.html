@@ -14,7 +14,6 @@
     <h1 class="mb-0">Lista de Vendas</h1>
 
     <div class="d-flex gap-3">
-      <button id="btnCarregar" class="btn btn-primary">Carregar Vendas</button>
       <a class="btn btn-success" href="/tabelas/vendas/cadastro.html">Nova Venda</a>
       <button id="btnVoltar" class="btn btn-dark">Voltar</button>
     </div>
@@ -33,13 +32,13 @@
         <th>Concessionária</th>
         <th>Cliente</th>
         <th>CPF</th>
+        <th>Ações</th>
       </tr>
     </thead>
     <tbody id="tbody">
       <tr>
-        <td colspan="8">Clique em "Carregar Vendas".</td>
+        <td colspan="9">Carregando...</td>
       </tr>
-    </tbody>
   </table>
 
   <script src="/js/auth-guard.js"></script>
@@ -99,9 +98,10 @@
       return info;
     }
 
-    document.getElementById('btnCarregar').addEventListener('click', async () => {
+    async function carregarVendas() {
       tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
       msg.textContent = '';
+
       try {
         const response = await fetch('/api/vendas', { credentials: 'include' });
         if (!response.ok) throw new Error('Falha ao buscar vendas');
@@ -115,25 +115,31 @@
 
         const rows = await Promise.all(data.map(async venda => {
           const [modelo, concNome, cli] = await Promise.all([
-            venda.veiculoModelo ?? (await getVeiculoModelo(venda.veiculoId)),
-            venda.concessionariaNome ?? (await getConcessionariaNome(venda.concessionariaId)),
-            venda.clienteNome ? { nome: venda.clienteNome, cpf: venda.clienteCpf } : await getClienteInfo(venda.clienteId)
+            venda.veiculoModelo ?? getVeiculoModelo(venda.veiculoId),
+            venda.concessionariaNome ?? getConcessionariaNome(venda.concessionariaId),
+            venda.clienteNome ? { nome: venda.clienteNome, cpf: venda.clienteCpf } : getClienteInfo(venda.clienteId)
           ]);
 
           const dataPt = venda.dataVenda ? new Date(venda.dataVenda).toLocaleString('pt-BR') : '';
           const preco = Number(venda.precoVenda ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
           return `
-          <tr>
-            <td>${venda.id}</td>
-            <td>${venda.protocolo}</td>
-            <td>${dataPt}</td>
-            <td>${preco}</td>
-            <td>${modelo}</td>
-            <td>${concNome}</td>
-            <td>${cli.nome}</td>
-            <td>${cli.cpf}</td>
-          </tr>`;
+            <tr>
+              <td>${venda.id}</td>
+              <td>${venda.protocolo ?? ''}</td>
+              <td>${dataPt}</td>
+              <td>${preco}</td>
+              <td>${modelo}</td>
+              <td>${concNome}</td>
+              <td>${cli.nome}</td>
+              <td>${cli.cpf}</td>
+              <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="/tabelas/vendas/editar.html?id=${venda.id}&returnUrl=${encodeURIComponent(location.pathname)}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger"
+                   href="/tabelas/vendas/deletar.html?id=${venda.id}&returnUrl=${encodeURIComponent(location.pathname)}">Excluir</a>
+              </td>
+            </tr>`;
         }));
 
         tbody.innerHTML = rows.join('');
@@ -142,7 +148,8 @@
         tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro ao carregar.</td></tr>`;
         showMsg('Erro ao carregar vendas.');
       }
-    });
+    }
+    document.addEventListener('DOMContentLoaded', carregarVendas);
 
     document.getElementById('btnVoltar').addEventListener('click', () => {
       location.href = '/index.html';

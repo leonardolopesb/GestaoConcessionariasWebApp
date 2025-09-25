@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Veículo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:980px">
+  <h1 class="mb-4">Editar Veículo</h1>
+  <div id="msg" class="mb-3"></div>
+
+  <form id="frmVeh" class="vstack gap-3">
+    <input id="modelo" class="form-control" maxlength="120" placeholder="Modelo" required>
+
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input id="ano" type="number" class="form-control" placeholder="Ano de Fabricação" min="1900" max="2100" required>
+      </div>
+      <div class="col-md-4">
+        <input id="preco" type="number" step="0.01" min="0" class="form-control" placeholder="Preço (BRL)" required>
+      </div>
+      <div class="col-md-4">
+        <input id="tipo" class="form-control" maxlength="60" placeholder="Tipo (ex.: Sedan, SUV)" required>
+      </div>
+    </div>
+
+    <!-- Tenta listar fabricantes via API; se não conseguir, cai para nome-texto -->
+    <div id="fabRow" class="row g-2">
+      <div class="col-md-6">
+        <label class="form-label small mb-1">Fabricante</label>
+        <select id="fabricanteId" class="form-select"></select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small mb-1">Descrição</label>
+        <input id="descricao" class="form-control" maxlength="255" placeholder="Descrição (opcional)">
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success btn-sm">Salvar</button>
+      <a id="btnVoltar" href="/tabelas/veiculos/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </form>
+
+  <script src="/js/auth-guard.js"></script>
+  <script type="module">
+    // somente o gerente pode editar veículos
+    requireAuth('Gerente');
+
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const returnUrl = qs.get('returnUrl') || '/tabelas/veiculos/home.html';
+
+    const msgEl = document.getElementById('msg');
+    const frm = document.getElementById('frmVeh');
+    const modelo = document.getElementById('modelo');
+    const ano = document.getElementById('ano');
+    const preco = document.getElementById('preco');
+    const tipo = document.getElementById('tipo');
+    const fabricanteId = document.getElementById('fabricanteId');
+    const descricao = document.getElementById('descricao');
+    document.getElementById('btnVoltar').href = returnUrl;
+
+    function showMsg(t, type='danger'){ msgEl.className = `alert alert-${type}`; msgEl.textContent = t; }
+    function clearMsg(){ msgEl.className = ''; msgEl.textContent = ''; }
+    const currentYear = new Date().getFullYear();
+
+    function validate(){
+      if (!modelo.value.trim()) return 'Modelo é obrigatório.';
+
+      const y = Number(ano.value);
+      if (!Number.isFinite(y) || y < 1900 || y > currentYear + 1) return 'Ano inválido.';
+
+      const p = Number(preco.value);
+      if (!Number.isFinite(p) || p < 0) return 'Preço inválido.';
+
+      if (!tipo.value.trim()) return 'Tipo é obrigatório.';
+
+      if (fabricanteId && !fabricanteId.value) return 'Selecione um fabricante.';
+      return null;
+    }
+
+    async function carregarFabricantesSelect(selectedId){
+      try{
+        const r = await fetch('/api/fabricantes', { credentials:'include' });
+
+        if(!r.ok) throw 0;
+
+        const list = await r.json();
+        fabricanteId.innerHTML = '<option value="">Selecione...</option>' + 
+          list.map(f => `<option value="${f.id}">${f.nomeFabricante}</option>`).join('');
+        if (selectedId) fabricanteId.value = selectedId;
+      } catch{
+        fabricanteId.innerHTML = '<option value="">(lista indisponível)</option>';
+      }
+    }
+
+    async function carregar(){
+      if (!id){ showMsg('Id do veículo não informado.'); return; }
+      clearMsg(); showMsg('Carregando...', 'secondary');
+
+      const r = await fetch(`/api/veiculos/${id}`, { credentials:'include' });
+      if (!r.ok){ showMsg('Veículo não encontrado.'); return; }
+
+      const v = await r.json();
+      modelo.value = v?.modelo ?? '';
+      ano.value = v?.anoFabricacao ?? '';
+      preco.value = typeof v?.preco === 'number' ? v.preco : (Number(v?.preco ?? 0) || 0);
+      tipo.value = v?.tipoVeiculo ?? '';
+      descricao.value = v?.descricao ?? '';
+
+      await carregarFabricantesSelect(v?.fabricanteId);
+
+      clearMsg();
+    }
+
+    frm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      clearMsg();
+
+      const err = validate();
+      if (err){ showMsg(err); return; }
+
+      const body = {
+        id,
+        modelo: modelo.value.trim(),
+        anoFabricacao: Number(ano.value),
+        preco: Number(preco.value),
+        tipoVeiculo: tipo.value.trim(),
+        fabricanteId: fabricanteId.value || null,
+        descricao: descricao.value.trim()
+      };
+
+      const r = await fetch(`/api/veiculos/${id}`, {
+        method:'PUT',
+        headers:{ 'Content-Type':'application/json' },
+        credentials:'include',
+        body: JSON.stringify(body)
+      });
+
+      if (r.ok){
+        showMsg('Veículo atualizado com sucesso!', 'success');
+      } else if (r.status === 409){
+        const txt = (await r.text()) || 'Já existe um veículo com estes dados.';
+        showMsg(txt);
+      } else {
+        const txt = await r.text();
+        showMsg('Erro ao salvar: ' + (txt || r.statusText));
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', carregar);
+  </script>
+</body>
+</html>

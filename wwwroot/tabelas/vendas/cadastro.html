@@ -116,6 +116,7 @@
     const qs = s => document.querySelector(s);
     const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const onlyDigits = s => (s || '').replace(/\D/g, '');
+    
     const showMsg = (t, type = 'danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
     const clearMsg = () => { msg.className = ''; msg.textContent = ''; };
 

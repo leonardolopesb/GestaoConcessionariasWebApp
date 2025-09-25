@@ -15,11 +15,12 @@
       <h1 class="mb-0">Clientes</h1>
 
       <div class="d-flex gap-3">
-        <button id="btnCarregar" class="btn btn-primary">Carregar</button>
-        <button id="btnCadastro" class="btn btn-secondary">Cadastrar Novo Cliente</button>
+        <button id="btnCadastro" class="btn btn-primary">Cadastrar Novo Cliente</button>
         <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
+
+    <div id="msg" class="mb-3"></div>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped mb-0">
@@ -29,11 +30,12 @@
             <th>Nome</th>
             <th>CPF</th>
             <th>Telefone</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody id="tbody">
           <tr>
-            <td colspan="4">Clique em "Carregar".</td>
+            <td colspan="5">Clique em "Carregar".</td>
           </tr>
         </tbody>
       </table>
@@ -47,19 +49,19 @@
 
     const tbody = document.getElementById('tbody');
 
-    document.getElementById('btnCarregar').addEventListener('click', async () => {
-      tbody.innerHTML = `<tr><td colspan="9">Carregando...</td></tr>`;
+    async function carregarClientes() {
+      tbody.innerHTML = `<tr><td colspan="4">Carregando...</td></tr>`;
       try {
         const response = await fetch('/api/clientes', { credentials: 'include' });
         if (!response.ok) throw new Error('Falha ao buscar clientes.');
 
         const data = await response.json();
         if (!data?.length) {
-          tbody.innerHTML = `<tr><td colspan="9">Nenhum cliente foi cadastrado.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5">Nenhum cliente foi cadastrado.</td></tr>`;
           return;
         }
-        tbody.innerHTML = '';
 
+        tbody.innerHTML = '';
         for (const cliente of data) {
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
@@ -67,13 +69,21 @@
               <td>${cliente.nome ?? ''}</td>
               <td>${cliente.cpf ?? ''}</td>
               <td>${cliente.telefone ?? ''}</td>
-            </tr>`);
+              <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary" 
+                   href="/tabelas/clientes/editar.html?id=${cliente.id}&returnUrl=${encodeURIComponent(location.pathname)}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger" 
+                   href="/tabelas/clientes/deletar.html?id=${cliente.id}&returnUrl=${encodeURIComponent(location.pathname)}">Excluir</a>
+              </td>
+            </tr>
+          `);
         }
       } catch (e) {
         tbody.innerHTML = `<tr><td colspan="4" class="text-danger">Erro ao carregar os clientes.</td></tr>`;
         console.error(e);
       }
-    });
+    }
+    document.addEventListener('DOMContentLoaded', carregarClientes);
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/clientes/cadastro.html';

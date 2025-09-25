@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Excluir Venda</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:900px">
+    <h1 class="mb-3">Excluir Venda</h1>
+    <div id="msg" class="mb-3"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-1 text-muted">Você está prestes a realizar um <strong>soft delete</strong> nesta venda.</p>
+            <p class="mb-3">Confirme para prosseguir.</p>
+
+            <dl class="row mb-4">
+                <dt class="col-sm-3">Protocolo</dt>
+                <dd id="vProtocolo" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Data</dt>
+                <dd id="vData" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Preço</dt>
+                <dd id="vPreco" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Veículo</dt>
+                <dd id="vModelo" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Fabricante</dt>
+                <dd id="vFab" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Concessionária</dt>
+                <dd id="vConc" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Cliente</dt>
+                <dd id="vCliente" class="col-sm-9">—</dd>
+            </dl>
+
+            <div class="d-flex gap-2">
+                <button id="btnExcluir" class="btn btn-danger">Excluir</button>
+                <a id="btnCancelar" href="/tabelas/vendas/home.html" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza que deseja excluir a venda <strong id="confirmProtocolo">—</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="btnConfirmar" type="button" class="btn btn-danger">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // delete: Vendedor
+        requireAuth('Vendedor');
+
+        const qs = new URLSearchParams(location.search);
+        const id = qs.get('id');
+        const returnUrl = qs.get('returnUrl') || '/tabelas/vendas/home.html';
+        document.getElementById('btnCancelar').href = returnUrl;
+
+        const msgEl = document.getElementById('msg');
+        const showMsg = (t, type = 'danger') => { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; };
+        const clearMsg = () => { msgEl.className = ''; msgEl.textContent = ''; };
+
+        const vProtocolo = document.getElementById('vProtocolo');
+        const vData = document.getElementById('vData');
+        const vPreco = document.getElementById('vPreco');
+        const vModelo = document.getElementById('vModelo');
+        const vFab = document.getElementById('vFab');
+        const vConc = document.getElementById('vConc');
+        const vCliente = document.getElementById('vCliente');
+        const confirmProtocolo = document.getElementById('confirmProtocolo');
+
+        async function carregar() {
+            if (!id) { showMsg('Id da venda não informado.'); return; }
+            clearMsg(); showMsg('Carregando...', 'secondary');
+
+            // carrega a venda
+            const rVenda = await fetch(`/api/vendas/${id}`, { credentials: 'include' });
+            if (!rVenda.ok) { showMsg('Venda não encontrada.'); return; }
+            const venda = await rVenda.json();
+
+            // busca veiculo + fabricante + concessionaria
+            let modelo = venda?.veiculoModelo ?? '';
+            let fabricanteNome = '';
+            if (!modelo || !venda?.fabricanteNome) {
+                // pega veículo
+                if (venda?.veiculoId) {
+                    const rV = await fetch(`/api/veiculos/${venda.veiculoId}`, { credentials: 'include' });
+                    if (rV.ok) {
+                        const v = await rV.json();
+                        modelo = modelo || v?.modelo || '';
+                        // fabricante direto do veículo ou via endpoint de fabricantes
+                        if (v?.fabricanteNome) {
+                            fabricanteNome = v.fabricanteNome;
+                        } else if (v?.fabricanteId) {
+                            const rF = await fetch(`/api/fabricantes/${v.fabricanteId}`, { credentials: 'include' });
+                            if (rF.ok) {
+                                const f = await rF.json();
+                                fabricanteNome = f?.nomeFabricante || '';
+                            }
+                        }
+                    }
+                }
+            } else {
+                fabricanteNome = venda.fabricanteNome;
+            }
+
+            let concNome = venda?.concessionariaNome ?? '';
+            if (!concNome && venda?.concessionariaId) {
+                const rC = await fetch(`/api/concessionarias/${venda.concessionariaId}`, { credentials: 'include' });
+                if (rC.ok) {
+                    const c = await rC.json();
+                    concNome = c?.nome || '';
+                }
+            }
+
+            // cliente (opcional)
+            let clienteNome = venda?.clienteNome ?? '';
+            if (!clienteNome && venda?.clienteId) {
+                const rCli = await fetch(`/api/clientes/${venda.clienteId}`, { credentials: 'include' });
+                if (rCli.ok) {
+                    const cli = await rCli.json();
+                    clienteNome = cli?.nome || '';
+                }
+            }
+
+            // preencher tela
+            vProtocolo.textContent = venda?.protocoloVenda ?? '—';
+            confirmProtocolo.textContent = venda?.protocoloVenda ?? '—';
+            vData.textContent = venda?.dataVenda ? new Date(venda.dataVenda).toLocaleString('pt-BR') : '—';
+            vPreco.textContent = Number(venda?.precoVenda ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            vModelo.textContent = modelo || '—';
+            vFab.textContent = fabricanteNome || '—';
+            vConc.textContent = concNome || '—';
+            vCliente.textContent = clienteNome || '—';
+
+            clearMsg();
+        }
+
+        const confirmModal = new bootstrap.Modal('#confirmModal');
+        document.getElementById('btnExcluir').addEventListener('click', () => confirmModal.show());
+
+        document.getElementById('btnConfirmar').addEventListener('click', async () => {
+            try {
+                const r = await fetch(`/api/vendas/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (r.ok) {
+                    showMsg('Fabricante excluído com sucesso! Você será redirecionado para a tabela.', 'success');
+                    confirmModal.hide();
+                    setTimeout(() => location.href = returnUrl, 3000);
+                } else {
+                    const txt = await r.text();
+                    showMsg('Falha ao excluir: ' + (txt || r.statusText));
+                }
+            } catch (e) {
+                showMsg('Erro de rede: ' + (e?.message || e));
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', carregar);
+    </script>
+</body>
+
+</html>

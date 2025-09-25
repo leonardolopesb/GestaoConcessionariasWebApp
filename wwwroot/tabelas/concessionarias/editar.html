@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Concessionária</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:960px">
+  <h1 class="mb-4">Editar Concessionária</h1>
+  <div id="msg" class="mb-3"></div>
+
+  <form id="frmConc" class="vstack gap-3">
+    <input id="nome" class="form-control" maxlength="120" placeholder="Nome" required>
+
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input id="cep" class="form-control" placeholder="CEP (somente números)" inputmode="numeric" maxlength="9">
+      </div>
+      <div class="col-md-4">
+        <input id="cidade" class="form-control" maxlength="80" placeholder="Cidade" required>
+      </div>
+      <div class="col-md-4">
+        <input id="estado" class="form-control" maxlength="50" placeholder="Estado" required>
+      </div>
+    </div>
+
+    <input id="endereco" class="form-control" maxlength="255" placeholder="Endereço" required>
+
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="telefone" class="form-control" maxlength="20" placeholder="Telefone">
+      </div>
+      <div class="col-md-6">
+        <input id="email" class="form-control" type="email" maxlength="120" placeholder="E-mail" required>
+      </div>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="capacidade" class="form-control" type="number" min="0" max="1000000" placeholder="Capacidade Máxima de Veículos" required>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success btn-sm">Salvar</button>
+      <a id="btnVoltar" href="/tabelas/concessionarias/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </form>
+
+  <script src="/js/auth-guard.js"></script>
+  <script type="module">
+    
+    // somente admin pode editar concessionárias
+    requireAuth('Admin');
+
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const returnUrl = qs.get('returnUrl') || '/tabelas/concessionarias/home.html';
+
+    const msgEl = document.getElementById('msg');
+    const frm = document.getElementById('frmConc');
+    const nome = document.getElementById('nome');
+    const cep = document.getElementById('cep');
+    const cidade = document.getElementById('cidade');
+    const estado = document.getElementById('estado');
+    const endereco = document.getElementById('endereco');
+    const telefone = document.getElementById('telefone');
+    const email = document.getElementById('email');
+    const capacidade = document.getElementById('capacidade');
+
+    document.getElementById('btnVoltar').href = returnUrl;
+
+    function showMsg(t, type = 'danger') { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; }
+    function clearMsg() { msgEl.className = ''; msgEl.textContent = ''; }
+
+    function onlyDigits(s) { return (s || '').replace(/\D/g, ''); }
+    cep.addEventListener('input', () => cep.value = onlyDigits(cep.value));
+
+    function validate() {
+      if (!nome.value.trim()) return 'O nome é obrigatório.';
+      if (!cidade.value.trim()) return 'A cidade é obrigatória.';
+      if (!estado.value.trim()) return 'O estado é obrigatório.';
+      if (!endereco.value.trim()) return 'O endereço é obrigatório.';
+      if (!email.value.trim()) return 'O e-mail é obrigatório.';
+      if (email.value.length > 120) return 'E-mail: máximo 120 caracteres.';
+      if (cep.value && !/^\d{8}$/.test(onlyDigits(cep.value))) return 'CEP inválido. Use 8 dígitos (apenas números).';
+      const cap = Number(capacidade.value);
+      if (!Number.isFinite(cap) || cap < 0) return 'Capacidade deve ser um número maior ou igual a 0.';
+      return null;
+    }
+
+    async function carregar() {
+      if (!id) { showMsg('Id da concessionária não informado.'); return; }
+      clearMsg(); showMsg('Carregando...', 'secondary');
+
+      const r = await fetch(`/api/concessionarias/${id}`, { credentials: 'include' });
+      if (!r.ok) { showMsg('Concessionária não encontrada.'); return; }
+
+      const c = await r.json();
+      nome.value = c?.nome ?? '';
+      cep.value = c?.cep ?? '';
+      cidade.value = c?.cidade ?? '';
+      estado.value = c?.estado ?? '';
+      endereco.value = c?.endereco ?? '';
+      telefone.value = c?.telefone ?? '';
+      email.value = c?.email ?? '';
+      capacidade.value = c?.capacidadeMaximaVeiculos ?? 0;
+
+      clearMsg();
+    }
+
+    frm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const err = validate();
+      if (err) { showMsg(err); return; }
+
+      const body = {
+        id,
+        nome: nome.value.trim(),
+        cep: onlyDigits(cep.value),
+        cidade: cidade.value.trim(),
+        estado: estado.value.trim(),
+        endereco: endereco.value.trim(),
+        telefone: telefone.value.trim(),
+        email: email.value.trim(),
+        capacidadeMaximaVeiculos: Number(capacidade.value)
+      };
+
+      const r = await fetch(`/api/concessionarias/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+
+      if (r.ok) {
+        showMsg('Concessionária atualizada com sucesso!', 'success');
+      } else if (r.status === 409) {
+        const txt = (await r.text()) || 'Já existe uma concessionária com esse nome.';
+        showMsg(txt);
+      } else {
+        const txt = await r.text();
+        showMsg('Erro ao salvar: ' + (txt || r.statusText));
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', carregar);
+  </script>
+</body>
+</html>

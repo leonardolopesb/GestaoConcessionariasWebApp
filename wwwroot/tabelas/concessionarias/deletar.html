@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Excluir Concessionária</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:760px">
+    <h1 class="mb-3">Excluir Concessionária</h1>
+    <div id="msg" class="mb-3"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-1 text-muted">Você está prestes a realizar um <strong>soft delete</strong> nesta
+                concessionária.</p>
+            <p class="mb-3">Confirme para prosseguir.</p>
+
+            <dl class="row mb-4">
+                <dt class="col-sm-3">Nome</dt>
+                <dd id="cNome" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">CEP</dt>
+                <dd id="cCep" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Cidade</dt>
+                <dd id="cCidade" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Estado</dt>
+                <dd id="cEstado" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Endereço</dt>
+                <dd id="cEndereco" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Telefone</dt>
+                <dd id="cTelefone" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">E-mail</dt>
+                <dd id="cEmail" class="col-sm-9">—</dd>
+
+                <dt class="col-sm-3">Capacidade</dt>
+                <dd id="cCapacidade" class="col-sm-9">—</dd>
+            </dl>
+
+            <div class="d-flex gap-2">
+                <button id="btnExcluir" class="btn btn-danger">Excluir</button>
+                <a id="btnCancelar" href="/tabelas/concessionarias/home.html"
+                    class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza que deseja excluir <strong id="confirmNome">esta concessionária</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="btnConfirmar" type="button" class="btn btn-danger">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // somente admin pode excluir concessionárias
+        requireAuth('Admin');
+
+        const qs = new URLSearchParams(location.search);
+        const id = qs.get('id');
+        const returnUrl = qs.get('returnUrl') || '/tabelas/concessionarias/home.html';
+        document.getElementById('btnCancelar').href = returnUrl;
+
+        const msgEl = document.getElementById('msg');
+        const showMsg = (t, type = 'danger') => { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; };
+        const clearMsg = () => { msgEl.className = ''; msgEl.textContent = ''; };
+
+        const cNome = document.getElementById('cNome');
+        const cCep = document.getElementById('cCep');
+        const cCidade = document.getElementById('cCidade');
+        const cEstado = document.getElementById('cEstado');
+        const cEndereco = document.getElementById('cEndereco');
+        const cTelefone = document.getElementById('cTelefone');
+        const cEmail = document.getElementById('cEmail');
+        const cCapacidade = document.getElementById('cCapacidade');
+        const confirmNome = document.getElementById('confirmNome');
+
+        async function carregar() {
+            if (!id) { showMsg('Id da concessionária não informado.'); return; }
+            clearMsg(); showMsg('Carregando...', 'secondary');
+
+            const r = await fetch(`/api/concessionarias/${id}`, { credentials: 'include' });
+            if (!r.ok) { showMsg('Concessionária não encontrada.'); return; }
+
+            const c = await r.json();
+            cNome.textContent = c?.nome ?? '—';
+            cCep.textContent = c?.cep ?? '—';
+            cCidade.textContent = c?.cidade ?? '—';
+            cEstado.textContent = c?.estado ?? '—';
+            cEndereco.textContent = c?.endereco ?? '—';
+            cTelefone.textContent = c?.telefone ?? '—';
+            cEmail.textContent = c?.email ?? '—';
+            cCapacidade.textContent = c?.capacidadeMaximaVeiculos ?? '—';
+            confirmNome.textContent = c?.nome ?? 'esta concessionária';
+
+            clearMsg();
+        }
+
+        const confirmModal = new bootstrap.Modal('#confirmModal');
+        document.getElementById('btnExcluir').addEventListener('click', () => confirmModal.show());
+
+        document.getElementById('btnConfirmar').addEventListener('click', async () => {
+            try {
+                const r = await fetch(`/api/concessionarias/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (r.ok) {
+                    showMsg('Fabricante excluído com sucesso! Você será redirecionado para a tabela.', 'success');
+                    confirmModal.hide();
+                    setTimeout(() => location.href = returnUrl, 3000);
+                } else {
+                    const txt = await r.text();
+                    showMsg('Falha ao excluir: ' + (txt || r.statusText));
+                }
+            } catch (e) {
+                showMsg('Erro de rede: ' + (e?.message || e));
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', carregar);
+    </script>
+</body>
+
+</html>

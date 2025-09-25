@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Usuário</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:900px">
+  <h1 class="mb-4">Editar Usuário</h1>
+  <div id="msg" class="mb-3"></div>
+
+  <form id="frmUser" class="vstack gap-3">
+    <input id="nomeUsuario" class="form-control" maxlength="60" placeholder="Nome de Usuário" required>
+    
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="email" class="form-control" type="email" maxlength="120" placeholder="E-mail" required>
+      </div>
+      <div class="col-md-6">
+        <select id="nivel" class="form-select">
+          <option value="Admin">Administrador</option>
+          <option value="Gerente">Gerente</option>
+          <option value="Vendedor">Vendedor</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- dica: caso queira permitir troca de senha aqui, adicionamos campos depois -->
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success btn-sm">Salvar</button>
+      <a id="btnVoltar" href="/tabelas/usuarios/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </form>
+
+  <script src="/js/auth-guard.js"></script>
+  <script type="module">
+    // somente Admin pode editar usuários
+    requireAuth('Admin');
+
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const returnUrl = qs.get('returnUrl') || '/tabelas/usuarios/home.html';
+
+    const msgEl = document.getElementById('msg');
+    const frm = document.getElementById('frmUser');
+    const nomeUsuario = document.getElementById('nomeUsuario');
+    const email = document.getElementById('email');
+    const nivel = document.getElementById('nivel');
+    document.getElementById('btnVoltar').href = returnUrl;
+
+    function showMsg(t, type='danger'){ msgEl.className = `alert alert-${type}`; msgEl.textContent = t; }
+    function clearMsg(){ msgEl.className = ''; msgEl.textContent = ''; }
+
+    // sem espaços no username
+    nomeUsuario.addEventListener('input', () => nomeUsuario.value = nomeUsuario.value.replace(/\s+/g,''));
+    nomeUsuario.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      nomeUsuario.value += text.replace(/\s+/g,'');
+    });
+
+    function validate() {
+      const n = nomeUsuario.value.trim();
+      const em = email.value.trim();
+      if (!n) return 'O nome de usuário é obrigatório.';
+      if (n.length > 60) return 'Nome de usuário: máximo 60 caracteres.';
+      if (!em) return 'E-mail é obrigatório.';
+      if (em.length > 120) return 'E-mail: máximo 120 caracteres.';
+      return null;
+    }
+
+    async function carregar() {
+      if (!id) { showMsg('Id do usuário não informado.'); return; }
+      clearMsg(); showMsg('Carregando...', 'secondary');
+
+      const r = await fetch(`/api/users/${id}`, { credentials:'include' });
+      if (!r.ok) { showMsg('Usuário não encontrado.'); return; }
+
+      const u = await r.json();
+      nomeUsuario.value = u?.nomeUsuario ?? u?.userName ?? '';
+      email.value = u?.email ?? '';
+      nivel.value = u?.nivelAcesso ?? u?.accessLevel ?? 'Vendedor';
+
+      clearMsg();
+    }
+
+    frm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const err = validate();
+      if (err) { showMsg(err); return; }
+
+      const body = {
+        id,
+        nomeUsuario: nomeUsuario.value.trim(),
+        email: email.value.trim(),
+        accessLevel: nivel.value
+      };
+
+      const r = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+
+      if (r.ok) {
+        showMsg('Usuário atualizado com sucesso!', 'success');
+      } else if (r.status === 409) {
+        const txt = (await r.text()) || 'Já existe um usuário com este nome ou e-mail.';
+        showMsg(txt);
+      } else {
+        const txt = await r.text();
+        showMsg('Erro ao salvar: ' + (txt || r.statusText));
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', carregar);
+  </script>
+</body>
+</html>

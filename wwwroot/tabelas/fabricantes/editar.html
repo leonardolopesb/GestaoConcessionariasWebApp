@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Editar Fabricante</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container py-4" style="max-width:900px">
+  <h1 class="mb-4">Editar Fabricante</h1>
+  <div id="msg" class="mb-3"></div>
+
+  <form id="frmFab" class="vstack gap-3">
+    <input id="nome" class="form-control" maxlength="100" placeholder="Nome do Fabricante" required>
+
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="pais" class="form-control" maxlength="50" placeholder="País de Origem" required>
+      </div>
+
+      <div class="col-md-6">
+        <input id="ano" type="number" class="form-control" placeholder="Ano de Fundação" min="1" max="2025" required>
+      </div>
+    </div>
+
+    <input id="website" class="form-control" placeholder="https://exemplo.com" required>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success btn-sm">Salvar</button>
+      <a id="btnVoltar" href="/tabelas/fabricantes/home.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+  </form>
+
+  <script src="/js/auth-guard.js"></script>
+  <script type="module">
+    // Somente Admin e Gerente podem editar (ajuste se quiser mais restrito)
+    requireAuth(['Admin', 'Gerente']);
+
+    const qs = new URLSearchParams(location.search);
+    const id = qs.get('id');
+    const returnUrl = qs.get('returnUrl') || '/tabelas/fabricantes/home.html';
+
+    const msgEl = document.getElementById('msg');
+    const frm = document.getElementById('frmFab');
+    const nome = document.getElementById('nome');
+    const pais = document.getElementById('pais');
+    const ano = document.getElementById('ano');
+    const website = document.getElementById('website');
+
+    document.getElementById('btnVoltar').href = returnUrl;
+
+    const anoAtual = new Date().getFullYear();
+    const reUrl = /^(https?:\/\/)[^\s]+$/i;
+
+    function showMsg(t, type = 'danger') { msgEl.className = `alert alert-${type}`; msgEl.textContent = t; }
+    function clearMsg() { msgEl.className = ''; msgEl.textContent = ''; }
+    
+
+    // bloquear espaços no website
+    website.addEventListener('input', () => website.value = website.value.replace(/\s+/g, ''));
+    website.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      website.value += text.replace(/\s+/g, '');
+    });
+
+    function validate() {
+      const vNome = nome.value;
+      const vPais = pais.value;
+      const vAno = Number(ano.value);
+      const vSite = website.value;
+
+      if (!vNome) return 'O nome do fabricante é obrigatório.';
+      if (vNome.length > 100) return 'Nome do fabricante: máximo 100 caracteres.';
+      if (!vPais) return 'O país de origem é obrigatório.';
+      if (vPais.length > 50) return 'País de origem: máximo 50 caracteres.';
+      if (vAno > anoAtual) return `Ano de fundação deve ser menor do que o ano atual (${anoAtual}).`;
+      if (!vSite) return 'O Website é obrigatório.';
+      if (!reUrl.test(vSite)) return 'Website inválido. Use: https:// ou http://';
+      if (vSite.length > 255) return 'Website deve possuir no máximo 255 caracteres.';
+      return null;
+    }
+
+    async function carregar() {
+      if (!id) { showMsg('Id do fabricante não informado.'); return; }
+      clearMsg();
+      showMsg('Carregando...', 'secondary');
+
+      const r = await fetch(`/api/fabricantes/${id}`, { credentials: 'include' });
+      if (!r.ok) { showMsg('Fabricante não encontrado.'); return; }
+
+      const fab = await r.json();
+      nome.value = fab?.nomeFabricante ?? '';
+      pais.value = fab?.paisOrigem ?? '';
+      ano.value = fab?.anoFundacao ?? '';
+      website.value = fab?.website ?? '';
+
+      clearMsg();
+    }
+
+    frm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const err = validate();
+      if (err) { showMsg(err); return; }
+
+      const body = {
+        id,
+        nomeFabricante: nome.value.trim(),
+        paisOrigem: pais.value.trim(),
+        anoFundacao: Number(ano.value),
+        website: website.value.trim()
+      };
+
+      const r = await fetch(`/api/fabricantes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+
+      if (r.ok) {
+        showMsg('Fabricante atualizado com sucesso!', 'success');
+      } else if (r.status === 409) {
+        showMsg('Já existe um fabricante com esse nome.');
+      } else {
+        const txt = await r.text();
+        showMsg('Erro ao salvar: ' + (txt || r.statusText));
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', carregar);
+  </script>
+</body>
+</html>

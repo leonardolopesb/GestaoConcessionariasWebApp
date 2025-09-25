@@ -15,11 +15,12 @@
       <h1 class="mb-0">Veículos</h1>
 
       <div class="d-flex gap-3">
-        <button id="btnCarregar" class="btn btn-primary">Carregar Veículos</button>
-        <button id="btnCadastro" class="btn btn-secondary">Adicionar Novo Veículo</button>
+        <button id="btnCadastro" class="btn btn-primary">Adicionar Novo Veículo</button>
         <button id="btnVoltar" class="btn btn-dark">Voltar</button>
       </div>
     </div>
+
+    <div id="msg" class="mb-3"></div>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped">
@@ -32,11 +33,12 @@
             <th>Tipo</th>
             <th>Nome do Fabricante</th>
             <th>Descrição</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody id="tbody">
           <tr>
-            <td colspan="7">Clique em "Carregar Veículos".</td>
+            <td colspan="8">Clique em "Carregar Veículos".</td>
           </tr>
         </tbody>
       </table>
@@ -48,46 +50,47 @@
     requireAuth(['Gerente', 'Vendedor']);
 
     const tbody = document.getElementById('tbody');
+    const msg = document.getElementById('msg');
 
-    document.getElementById('btnCarregar').addEventListener('click', loadVeiculos);
+    const showMsg = (t, type='danger') => { msg.className = `alert alert-${type}`; msg.textContent = t; };
+    const clearMsg = () => { msg.className = ''; msg.textContent = ''; };
 
-    async function loadVeiculos() {
-      tbody.innerHTML = `<tr><td colspan="7">Carregando...</td></tr>`;
+    async function carregarVeiculos() {
+      tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
       try {
         const response = await fetch('/api/veiculos', { credentials: 'include' });
-        if (!response.ok) throw new Error('Falha ao buscar veículos');
+        if (!response.ok) throw new Error('Falha ao buscar veículos.');
 
-        const list = await response.json();
-
-        if (!Array.isArray(list) || list.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7">Nenhum veículo cadastrado.</td></tr>`;
+        const data = await response.json();
+        if (!data?.length) {
+          tbody.innerHTML = `<tr><td colspan="8">Nenhum veículo cadastrado.</td></tr>`;
           return;
         }
 
-        tbody.innerHTML = '';
-
-        for (const veiculo of list) {
-          const precoFormatado = typeof veiculo.preco === 'number'
-            ? veiculo.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : (veiculo.preco ?? '');
-
-          tbody.insertAdjacentHTML('beforeend', `
-            <tr>
-              <td>${veiculo.id}</td>
-              <td>${veiculo.modelo}</td>
-              <td>${veiculo.anoFabricacao}</td>
-              <td>${precoFormatado}</td>
-              <td>${veiculo.tipoVeiculo}</td>
-              <td>${veiculo.fabricanteNome}</td>
-              <td>${veiculo.descricao ?? ''}</td>
-            </tr>`);
-        }
-      } catch (e) {
-        console.error(e);
-        tbody.innerHTML = `<tr><td colspan="7" class="text-danger">Erro ao carregar.</td></tr>`;
+        tbody.innerHTML = data.map(v => `
+          <tr>
+            <td>${v.id}</td>
+            <td>${v.modelo}</td>
+            <td>${v.anoFabricacao}</td>
+            <td>R$ ${v.preco.toFixed(2).replace('.', ',')}</td>
+            <td>${v.tipoVeiculo}</td>
+            <td>${v.fabricanteNome}</td>
+            <td>${v.descricao || ''}</td>
+            <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="/tabelas/veiculos/editar.html?id=${v.id}&returnUrl=${encodeURIComponent(location.pathname)}">Editar</a>
+                <a class="btn btn-sm btn-outline-danger"
+                   href="/tabelas/veiculos/deletar.html?id=${v.id}&returnUrl=${encodeURIComponent(location.pathname)}">Excluir</a>
+              </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro ao carregar.</td></tr>`;
         showMsg('Erro ao carregar veículos.');
       }
     }
+    document.addEventListener('DOMContentLoaded', carregarVeiculos);
 
     document.getElementById('btnCadastro').addEventListener('click', () => {
       location.href = '/tabelas/veiculos/cadastro.html';
