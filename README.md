@@ -24,32 +24,33 @@ Permite gerenciar **usuários, fabricantes, veículos, concessionárias, cliente
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
-- **.NET 8 / ASP.NET Core MVC**
-- **Entity Framework Core** (SQL Server)
-- **FluentValidation.AspNetCore**
+- **ASP.NET MVC**
+- **HTML, CSS e JavaScript**
+- **SQL Server**
+- **Entity Framework Core **
+- **FluentValidation**
 - **ASP.NET Identity**
-- **Swagger / Swashbuckle**
-- **Bootstrap 5**
-- **JavaScript Vanilla**
+- **Swagger**
+- **Bootstrap**
 
 ---
 
-## ⚙️ Configuração do Ambiente
+## Configurando o Ambiente
 
-### 🔹 Pré-requisitos
-- Visual Studio 2022 e/ou ou VS Code
-- .NET 8/9 SDK
+### Pré-requisitos
+- Visual Studio 2022 e/ou VS Code
+- .NET 8 ou 9 SDK
 - SQL Server Express
 
-### 🔹 Clonar o repositório
+### Clone o repositório
 ```bash
 git clone https://github.com/leonardolopesb/GestaoConcessionariasWebApp.git
 cd GestaoConcessionariasWebApp
 ```
 
-### 🔹 Configurar o Banco de Dados
+### Configure o Banco de Dados
 No arquivo `appsettings.json`, ajuste a connection string para o seu SQL Server:
 ```json
 "ConnectionStrings": {
@@ -57,16 +58,16 @@ No arquivo `appsettings.json`, ajuste a connection string para o seu SQL Server:
 }
 ```
 
-### 🔹 Rodar as Migrations
+### Rode a Migration do Projeto
 ```bash
 dotnet ef database update
 ```
 
-O comando criará o banco com todas as tabelas necessárias.
+Então, o comando criará o banco com todas as tabelas necessárias.
 
 ---
 
-## ▶️ Executando o Projeto
+## Execute o Projeto
 
 ```bash
 dotnet run
@@ -78,7 +79,7 @@ Ao executar o código acima, o projeto estará disponível em:
 
 ---
 
-## 👤 Usuário Inicial (Seeder)
+## Usuário Inicial (Seeder)
 
 O projeto possui um **IdentitySeeder**. Para criar um administrador, capaz de cadastrar novos usuários, escreva no **Terminal**:
 
@@ -98,12 +99,12 @@ Então você terá a conta inicial para login:
 
 ---
 
-## 📜 Licença
+## Licença
 
 Licenciado pelo [MIT License](./LICENSE).
 
 ---
 
-## 👨‍💻 Autor
+## Autor
 
 [<img src='https://avatars.githubusercontent.com/u/54039202?v=4' width = 300><br><sub>Leonardo Lopes Braga</sub>](https://github.com/leonardolopesb) 
